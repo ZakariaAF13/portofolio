@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
@@ -156,29 +156,6 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">
-                  Demo credentials
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-3">
-              <div className="rounded-md bg-gray-50 p-4">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Email:</span> admin@example.com
-                  <br />
-                  <span className="font-medium">Password:</span> password123
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
