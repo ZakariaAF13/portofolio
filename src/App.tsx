@@ -29,8 +29,8 @@ function AppContent() {
   };
 
   const backgroundImage = theme === 'dark' 
-    ? 'url("/backgroundDark.png")' 
-    : 'url("/background.png")';
+    ? 'url("../backgroundDark.png")' 
+    : 'url("../background.png")';
 
   return (
     <div 
