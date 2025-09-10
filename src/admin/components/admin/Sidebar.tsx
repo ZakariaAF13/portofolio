@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
   FileText, 
@@ -18,6 +19,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const navigation = [
     { id: 'hero', name: 'Hero Section', icon: Home },
@@ -66,6 +68,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         </nav>
 
         <div className="border-t border-gray-200 px-4 py-4">
+          <button
+            onClick={() => navigate('/admin/account')}
+            className="w-full mb-2 flex items-center px-4 py-3 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+          >
+            <User className="mr-3 h-5 w-5" />
+            Manage Account
+          </button>
           <button
             onClick={() => signOut()}
             className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"

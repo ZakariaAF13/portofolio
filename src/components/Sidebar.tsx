@@ -73,7 +73,7 @@ export default function Sidebar() {
       
       <div className="w-28 h-28 rounded-2xl overflow-hidden mb-4 shadow-lg">
         <img 
-          src={profile.imageUrl || "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400"} 
+          src={profile.imageUrl || ""} 
           alt={`Portrait of ${profile.name}`}
           className="w-full h-full object-cover"
         />

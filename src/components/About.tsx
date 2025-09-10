@@ -89,16 +89,7 @@ export default function About({ theme }: AboutProps) {
         ) : (
           <>
             <p className={`${bodyTextClass} leading-relaxed text-base max-w-4xl`}>
-              Frontend Web Developer with over 1 year of experience in programming,
-              passionate about creating responsive and dynamic user interfaces.
-              Skilled in using frameworks such as React.js, Express.js, Next.js,
-              Laravel, Tailwind, and Bootstrap to build interactive and user-friendly
-              web applications. Proficient in collaborating with UI/UX and backend
-              teams to seamlessly implement design and system functionality.
-            </p>
-            <p className={`${bodyTextClass} leading-relaxed text-base max-w-4xl`}>
-              Comprehensive understanding of software development concepts,
-              including Agile methodologies and UI/UX principles.
+            Fullstack Web Developer passionate about building end-to-end web applications. Skilled in both frontend and backend development using frameworks and technologies such as React.js, Next.js, Express.js, Laravel, Tailwind, and Bootstrap. Experienced in designing responsive user interfaces, developing robust server-side logic and APIs, as well as editing photos, videos, and logos. Adept at combining technological innovation with administrative efficiency to deliver scalable, user-friendly, and creative digital solutions.
             </p>
           </>
         )}

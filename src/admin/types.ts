@@ -9,6 +9,7 @@ export interface Project {
   technologies?: string[];
   liveUrl?: string;
   githubUrl?: string;
+  tiktokUrl?: string;
 }
 
 export interface Skill {

@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ResumePage from './pages/ResumePage';
 import ProfilePage from './pages/ProfilePage';
+import AccountPage from './pages/AccountPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
@@ -34,6 +35,7 @@ export default function Admin() {
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="skills" element={<ResumePage />} />
                 <Route path="profile" element={<ProfilePage />} />
+                <Route path="account" element={<AccountPage />} />
                 <Route path="about" element={<AboutPage />} />
                 <Route path="contact" element={<ContactPage />} />
                 {/* Add more admin routes here */}

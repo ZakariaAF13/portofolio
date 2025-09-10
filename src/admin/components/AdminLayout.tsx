@@ -116,6 +116,12 @@ export default function AdminLayout() {
                   <div className="ml-3">
                     <p className={`text-sm font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{user?.email}</p>
                     <button
+                      onClick={() => { setSidebarOpen(false); navigate('/admin/account'); }}
+                      className={`text-xs font-medium transition-colors ${isLightMode ? 'text-blue-600 hover:text-blue-800' : 'text-blue-300 hover:text-white'}`}
+                    >
+                      Manage account
+                    </button>
+                    <button
                       onClick={handleSignOut}
                       className={`text-xs font-medium transition-colors ${isLightMode ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 hover:text-white'}`}
                     >
@@ -217,6 +223,23 @@ export default function AdminLayout() {
                     ? 'bg-white ring-black' 
                     : 'bg-gray-800 ring-gray-600'
                 }`}>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => navigate('/admin/account')}
+                        className={classNames(
+                          active 
+                            ? isLightMode ? 'bg-gray-100' : 'bg-gray-700'
+                            : '',
+                          `block w-full px-4 py-2 text-sm text-left ${
+                            isLightMode ? 'text-blue-700' : 'text-blue-300'
+                          }`
+                        )}
+                      >
+                        Manage account
+                      </button>
+                    )}
+                  </Menu.Item>
                   <Menu.Item>
                     {({ active }) => (
                       <button

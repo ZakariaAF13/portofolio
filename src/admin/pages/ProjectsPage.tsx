@@ -14,10 +14,12 @@ export default function ProjectsPage() {
   const [formData, setFormData] = useState({
     title: '',
     category: '',
+    customCategory: '',
     status: 'Draft' as 'Published' | 'Draft',
     description: '',
     technologies: '',
     imageUrl: '',
+    tiktokUrl: '',
   });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,10 +34,12 @@ export default function ProjectsPage() {
       setFormData({
         title: project.title,
         category: project.category,
+        customCategory: '',
         status: project.status,
         description: project.description || '',
         technologies: project.technologies?.join(', ') || '',
         imageUrl: project.imageUrl || '',
+        tiktokUrl: project.tiktokUrl || '',
       });
       setPreviewImage(project.imageUrl || null);
     } else {
@@ -43,10 +47,12 @@ export default function ProjectsPage() {
       setFormData({
         title: '',
         category: '',
+        customCategory: '',
         status: 'Draft',
         description: '',
         technologies: '',
         imageUrl: '',
+        tiktokUrl: '',
       });
       setPreviewImage(null);
     }
@@ -59,10 +65,12 @@ export default function ProjectsPage() {
     setFormData({
       title: '',
       category: '',
+      customCategory: '',
       status: 'Draft',
       description: '',
       technologies: '',
       imageUrl: '',
+      tiktokUrl: '',
     });
     setPreviewImage(null);
   };
@@ -98,11 +106,12 @@ export default function ProjectsPage() {
     const projectData: Project = {
       id: editingProject?.id || Date.now(),
       title: formData.title,
-      category: formData.category,
+      category: formData.category === 'Other' ? formData.customCategory : formData.category,
       status: formData.status,
       description: formData.description,
       technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
       imageUrl: formData.imageUrl,
+      tiktokUrl: formData.tiktokUrl,
       createdAt: editingProject?.createdAt || new Date().toISOString().split('T')[0],
     };
 
@@ -245,15 +254,51 @@ export default function ProjectsPage() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Category
                       </label>
-                      <input
-                        type="text"
+                      <select
                         required
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value, customCategory: '' })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                        placeholder="e.g., Web Development"
-                      />
+                      >
+                        <option value="">Select Category</option>
+                        {/* Default categories */}
+                        <option value="Web Development">Web Development</option>
+                        <option value="Mobile App">Mobile App</option>
+                        <option value="Desktop App">Desktop App</option>
+                        <option value="UI/UX Design">UI/UX Design</option>
+                        <option value="TikTok">TikTok</option>
+                        {/* Dynamic categories from existing projects */}
+                        {Array.from(new Set(projects.map(p => p.category)))
+                          .filter(category => 
+                            category && 
+                            !['Web Development', 'Mobile App', 'Desktop App', 'UI/UX Design', 'TikTok'].includes(category)
+                          )
+                          .sort()
+                          .map(category => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))
+                        }
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
+
+                    {formData.category === 'Other' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Other Category
+                        </label>
+                        <input
+                          type="text"
+                          required={formData.category === 'Other'}
+                          value={formData.customCategory}
+                          onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                          placeholder="Enter other category name"
+                        />
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -294,6 +339,25 @@ export default function ProjectsPage() {
                         placeholder="React, Node.js, MongoDB (comma separated)"
                       />
                     </div>
+
+                    {formData.category === 'TikTok' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          TikTok URL
+                        </label>
+                        <input
+                          type="url"
+                          value={formData.tiktokUrl}
+                          onChange={(e) => setFormData({ ...formData, tiktokUrl: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                          placeholder="https://www.tiktok.com/@username/video/1234567890"
+                          required={formData.category === 'TikTok'}
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Enter the full TikTok video URL for embedding
+                        </p>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
