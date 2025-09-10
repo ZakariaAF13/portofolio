@@ -21,26 +21,36 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const loading = false; // Not used in this simplified version
+  const [loading, setLoading] = useState(true);
 
-  // For testing - auto login
+  // Check for existing session on mount
   useEffect(() => {
-    const testUser = { email: 'test@example.com' };
-    setUser(testUser);
+    const savedUser = localStorage.getItem('admin_user');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+      } catch (error) {
+        localStorage.removeItem('admin_user');
+      }
+    }
+    setLoading(false);
   }, []);
 
   const signIn = async (email: string, password: string): Promise<SignInResponse> => {
-    // Simple validation for testing
-    if (email && password) {
-      const testUser = { email };
-      setUser(testUser);
-      return { data: { user: testUser }, error: null };
+    // Simple validation for demo - in production, this would be an API call
+    if (email === 'admin@example.com' && password === 'password123') {
+      const userData = { email };
+      setUser(userData);
+      localStorage.setItem('admin_user', JSON.stringify(userData));
+      return { data: { user: userData }, error: null };
     }
-    return { data: null, error: new Error('Invalid credentials') };
+    return { data: null, error: new Error('Invalid email or password') };
   };
 
   const signOut = async () => {
     setUser(null);
+    localStorage.removeItem('admin_user');
     return { error: null };
   };
 
