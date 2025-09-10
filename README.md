@@ -65,7 +65,6 @@ VITE_OPENAI_API_KEY=your-openai-api-key
 - `npm run format` - Format code with Prettier
 
 ## Project Structure
-
 ```
 src/
   admin/
