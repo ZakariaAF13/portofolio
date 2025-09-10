@@ -65,6 +65,7 @@ VITE_OPENAI_API_KEY=your-openai-api-key
 - `npm run format` - Format code with Prettier
 
 ## Project Structure
+<img width="361" height="142" alt="image" src="https://github.com/user-attachments/assets/d0a285d4-dcb2-4f5a-b8d4-f65d03c192f1" />
 
 ```
 src/
