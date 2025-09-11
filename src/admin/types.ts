@@ -1,5 +1,5 @@
 export interface Project {
-  id: number;
+  id: string;
   title: string;
   category: string;
   status: 'Published' | 'Draft';
@@ -13,7 +13,7 @@ export interface Project {
 }
 
 export interface Skill {
-  id: number;
+  id: string;
   name: string;
   category: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
@@ -30,7 +30,7 @@ export interface SocialMediaField {
 }
 
 export interface Profile {
-  id: number;
+  id: string;
   name: string;
   title: string;
   email: string;
@@ -57,7 +57,7 @@ export interface Profile {
 }
 
 export interface WhatIDoItem {
-  id: number;
+  id: string;
   title: string;
   description: string;
   icon: string;
@@ -67,7 +67,7 @@ export interface WhatIDoItem {
 }
 
 export interface Experience {
-  id: number;
+  id: string;
   title: string;
   company: string;
   period: string;
@@ -77,7 +77,7 @@ export interface Experience {
 }
 
 export interface Education {
-  id: number;
+  id: string;
   degree: string;
   institution: string;
   period: string;

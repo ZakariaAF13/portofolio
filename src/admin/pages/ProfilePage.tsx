@@ -5,21 +5,42 @@ import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Profile, SocialMediaField } from '../types';
 import IconPicker, { socialMediaIcons, type IconOption } from '../components/IconPicker';
+import SuccessModal from '../components/SuccessModal';
 
 
 export default function ProfilePage() {
   const { profile, updateProfile } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(profile);
+  const [formData, setFormData] = useState<Profile | null>(profile);
   const [isSaving, setIsSaving] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [socialMediaFields, setSocialMediaFields] = useState<SocialMediaField[]>(
-    profile.socialMediaFields || []
+    profile?.socialMediaFields || []
   );
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+
+  // Success modal state
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success' as 'success' | 'info' | 'warning'
+  });
+
+  // Show loading state if profile is not loaded yet
+  if (!profile) {
+    return (
+      <div className={`min-h-screen p-4 sm:p-6 flex items-center justify-center ${isLightMode ? 'bg-gray-50' : 'bg-slate-900'}`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className={`${isLightMode ? 'text-gray-600' : 'text-gray-400'}`}>Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleEdit = () => {
     setFormData(profile);
@@ -29,7 +50,7 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setFormData(profile);
     setPreviewImage(null);
-    setSocialMediaFields(profile.socialMediaFields || []);
+    setSocialMediaFields(profile?.socialMediaFields || []);
     setIsEditing(false);
   };
 
@@ -90,7 +111,7 @@ export default function ProfilePage() {
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string;
         setPreviewImage(imageUrl);
-        setFormData(prev => ({ ...prev, imageUrl }));
+        setFormData(prev => prev ? { ...prev, imageUrl } : null);
       };
       reader.readAsDataURL(file);
     }
@@ -106,15 +127,35 @@ export default function ProfilePage() {
       });
       setPreviewImage(null);
       setIsEditing(false);
+      showSuccessModal('Profile Updated!', 'Your profile has been updated successfully.');
     } catch (error) {
       console.error('Error updating profile:', error);
+      showSuccessModal('Error', 'Failed to update profile. Please try again.', 'warning');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const showSuccessModal = (title: string, message: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    setSuccessModal({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const closeSuccessModal = () => {
+    setSuccessModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'success'
+    });
+  };
+
   const handleInputChange = (field: keyof Profile, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => prev ? { ...prev, [field]: value } : null);
   };
 
   return (
@@ -144,7 +185,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-6">
               <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
                 <img 
-                  src={previewImage || formData.imageUrl || profile.imageUrl} 
+                  src={previewImage || formData?.imageUrl || profile.imageUrl} 
                   alt={profile.name}
                   className="w-full h-full object-cover"
                 />
@@ -185,7 +226,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       required
-                      value={formData.name}
+                      value={formData?.name || ''}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                     />
@@ -198,7 +239,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       required
-                      value={formData.title}
+                      value={formData?.title || ''}
                       onChange={(e) => handleInputChange('title', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                     />
@@ -212,7 +253,7 @@ export default function ProfilePage() {
                     <input
                       type="email"
                       required
-                      value={formData.email}
+                      value={formData?.email || ''}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                     />
@@ -226,7 +267,7 @@ export default function ProfilePage() {
                     <input
                       type="tel"
                       required
-                      value={formData.phone}
+                      value={formData?.phone || ''}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                     />
@@ -240,7 +281,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       required
-                      value={formData.location}
+                      value={formData?.location || ''}
                       onChange={(e) => handleInputChange('location', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                     />
@@ -254,7 +295,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       required
-                      value={formData.birthday}
+                      value={formData?.birthday || ''}
                       onChange={(e) => handleInputChange('birthday', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                       placeholder="e.g., September 13, 2003"
@@ -268,7 +309,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="url"
-                      value={formData.cvUrl || ''}
+                      value={formData?.cvUrl || ''}
                       onChange={(e) => handleInputChange('cvUrl', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                       placeholder="https://drive.google.com/file/d/your-cv-file-id/view"
@@ -283,7 +324,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-4">
                     <div className={`w-16 h-16 rounded-full overflow-hidden border-2 ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}>
                       <img 
-                        src={previewImage || formData.imageUrl || profile.imageUrl} 
+                        src={previewImage || formData?.imageUrl || profile.imageUrl} 
                         alt="Profile preview"
                         className="w-full h-full object-cover"
                       />
@@ -317,7 +358,7 @@ export default function ProfilePage() {
                   </label>
                   <textarea
                     rows={4}
-                    value={formData.bio || ''}
+                    value={formData?.bio || ''}
                     onChange={(e) => handleInputChange('bio', e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
                     placeholder="Tell us about yourself..."
@@ -435,7 +476,7 @@ export default function ProfilePage() {
                       <FiUser className="text-blue-500" />
                       <div>
                         <p className={`text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Full Name</p>
-                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile.name}</p>
+                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile?.name}</p>
                       </div>
                     </div>
 
@@ -443,7 +484,7 @@ export default function ProfilePage() {
                       <FiMail className="text-green-500" />
                       <div>
                         <p className={`text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Email</p>
-                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile.email}</p>
+                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile?.email}</p>
                       </div>
                     </div>
 
@@ -451,7 +492,7 @@ export default function ProfilePage() {
                       <FiPhone className="text-purple-500" />
                       <div>
                         <p className={`text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Phone</p>
-                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile.phone}</p>
+                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile?.phone}</p>
                       </div>
                     </div>
                   </div>
@@ -461,7 +502,7 @@ export default function ProfilePage() {
                       <FiMapPin className="text-red-500" />
                       <div>
                         <p className={`text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Location</p>
-                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile.location}</p>
+                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile?.location}</p>
                       </div>
                     </div>
 
@@ -469,7 +510,7 @@ export default function ProfilePage() {
                       <FiCalendar className="text-amber-500" />
                       <div>
                         <p className={`text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Birthday</p>
-                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile.birthday}</p>
+                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile?.birthday}</p>
                       </div>
                     </div>
 
@@ -479,7 +520,7 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <p className={`text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Title</p>
-                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile.title}</p>
+                        <p className={`font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{profile?.title}</p>
                       </div>
                     </div>
 
@@ -487,7 +528,7 @@ export default function ProfilePage() {
                       <FiDownload className="text-green-500 mt-1" />
                       <div className="flex-1">
                         <p className={`text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>CV Download URL</p>
-                        {profile.cvUrl ? (
+                        {profile?.cvUrl ? (
                           <a 
                             href={profile.cvUrl}
                             target="_blank"
@@ -504,7 +545,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {profile.bio && (
+                {profile?.bio && (
                   <div className={`p-4 rounded-lg border ${isLightMode ? 'bg-white border-gray-100' : 'bg-slate-800 border-slate-700'}`}>
                     <p className={`text-sm mb-2 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Bio</p>
                     <p className={`${isLightMode ? 'text-gray-900' : 'text-white'} leading-relaxed`}>{profile.bio}</p>
@@ -515,7 +556,7 @@ export default function ProfilePage() {
                 <div className={`border-t pt-6 ${isLightMode ? 'border-gray-200' : 'border-slate-600'}`}>
                   <h3 className={`text-lg font-semibold mb-4 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Social Media Links</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(profile.socialMediaFields || []).filter(field => field.url).map((field) => {
+                    {(profile?.socialMediaFields || []).filter(field => field.url).map((field) => {
                       const iconData = socialMediaIcons.find(icon => icon.name === field.icon);
                       const IconComponent = iconData?.icon;
                       
@@ -544,7 +585,7 @@ export default function ProfilePage() {
                     })}
                   </div>
                   
-                  {!(profile.socialMediaFields || []).some(field => field.url) && (
+                  {!(profile?.socialMediaFields || []).some(field => field.url) && (
                     <div className="text-center py-8">
                       <div className="text-gray-400 dark:text-gray-500 mb-2">
                         <FiPlus className="w-12 h-12 mx-auto" />
@@ -572,6 +613,15 @@ export default function ProfilePage() {
           }}
         />
       )}
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={closeSuccessModal}
+        title={successModal.title}
+        message={successModal.message}
+        type={successModal.type}
+      />
     </div>
   );
 }

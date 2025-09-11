@@ -7,8 +7,7 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  orderBy, 
-  limit,
+  orderBy,
   setDoc,
   getDoc
 } from "firebase/firestore";
@@ -44,8 +43,8 @@ export async function getProjectsFromFirestore(): Promise<Project[]> {
     const q = query(collection(db, COLLECTIONS.PROJECTS), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     const projects: Project[] = [];
-    querySnapshot.forEach((doc) => {
-      projects.push({ id: parseInt(doc.id), ...doc.data() } as Project);
+    querySnapshot.forEach((docSnap) => {
+      projects.push({ ...(docSnap.data() as Omit<Project, 'id'>), id: docSnap.id });
     });
     return projects;
   } catch (error) {
@@ -54,9 +53,9 @@ export async function getProjectsFromFirestore(): Promise<Project[]> {
   }
 }
 
-export async function updateProjectInFirestore(id: number, project: Partial<Project>) {
+export async function updateProjectInFirestore(id: string, project: Partial<Project>) {
   try {
-    const projectRef = doc(db, COLLECTIONS.PROJECTS, id.toString());
+    const projectRef = doc(db, COLLECTIONS.PROJECTS, id);
     await updateDoc(projectRef, project);
   } catch (error) {
     console.error("Error updating project:", error);
@@ -64,9 +63,14 @@ export async function updateProjectInFirestore(id: number, project: Partial<Proj
   }
 }
 
-export async function deleteProjectFromFirestore(id: number) {
+export async function deleteProjectFromFirestore(id: string) {
   try {
-    await deleteDoc(doc(db, COLLECTIONS.PROJECTS, id.toString()));
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      throw new Error(`Invalid project ID provided: ${id}`);
+    }
+    
+    const projectRef = doc(db, COLLECTIONS.PROJECTS, id);
+    await deleteDoc(projectRef);
   } catch (error) {
     console.error("Error deleting project:", error);
     throw error;
@@ -80,7 +84,7 @@ export async function addSkillToFirestore(skill: Omit<Skill, 'id'>) {
       ...skill,
       createdAt: new Date().toISOString().split('T')[0]
     });
-    return { id: docRef.id, ...skill };
+    return { id: docRef.id, ...skill } as Skill;
   } catch (error) {
     console.error("Error adding skill:", error);
     throw error;
@@ -92,8 +96,8 @@ export async function getSkillsFromFirestore(): Promise<Skill[]> {
     const q = query(collection(db, COLLECTIONS.SKILLS), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     const skills: Skill[] = [];
-    querySnapshot.forEach((doc) => {
-      skills.push({ id: parseInt(doc.id), ...doc.data() } as Skill);
+    querySnapshot.forEach((docSnap) => {
+      skills.push({ ...(docSnap.data() as Omit<Skill, 'id'>), id: docSnap.id });
     });
     return skills;
   } catch (error) {
@@ -102,9 +106,9 @@ export async function getSkillsFromFirestore(): Promise<Skill[]> {
   }
 }
 
-export async function updateSkillInFirestore(id: number, skill: Partial<Skill>) {
+export async function updateSkillInFirestore(id: string, skill: Partial<Skill>) {
   try {
-    const skillRef = doc(db, COLLECTIONS.SKILLS, id.toString());
+    const skillRef = doc(db, COLLECTIONS.SKILLS, id);
     await updateDoc(skillRef, skill);
   } catch (error) {
     console.error("Error updating skill:", error);
@@ -112,9 +116,13 @@ export async function updateSkillInFirestore(id: number, skill: Partial<Skill>) 
   }
 }
 
-export async function deleteSkillFromFirestore(id: number) {
+export async function deleteSkillFromFirestore(id: string) {
   try {
-    await deleteDoc(doc(db, COLLECTIONS.SKILLS, id.toString()));
+    if (!id || typeof id !== 'string') {
+      throw new Error('Invalid skill ID provided');
+    }
+    const skillRef = doc(db, COLLECTIONS.SKILLS, id);
+    await deleteDoc(skillRef);
   } catch (error) {
     console.error("Error deleting skill:", error);
     throw error;
@@ -137,7 +145,7 @@ export async function getProfileFromFirestore(): Promise<Profile | null> {
     const profileRef = doc(db, COLLECTIONS.PROFILE, 'main');
     const docSnap = await getDoc(profileRef);
     if (docSnap.exists()) {
-      return { id: 1, ...docSnap.data() } as Profile;
+      return { id: 'main', ...(docSnap.data() as Omit<Profile, 'id'>) };
     }
     return null;
   } catch (error) {
@@ -153,7 +161,7 @@ export async function addWhatIDoItemToFirestore(item: Omit<WhatIDoItem, 'id'>) {
       ...item,
       createdAt: new Date().toISOString().split('T')[0]
     });
-    return { id: docRef.id, ...item };
+    return { id: docRef.id, ...item } as WhatIDoItem;
   } catch (error) {
     console.error("Error adding what I do item:", error);
     throw error;
@@ -165,8 +173,8 @@ export async function getWhatIDoItemsFromFirestore(): Promise<WhatIDoItem[]> {
     const q = query(collection(db, COLLECTIONS.WHAT_I_DO), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     const items: WhatIDoItem[] = [];
-    querySnapshot.forEach((doc) => {
-      items.push({ id: parseInt(doc.id), ...doc.data() } as WhatIDoItem);
+    querySnapshot.forEach((docSnap) => {
+      items.push({ ...(docSnap.data() as Omit<WhatIDoItem, 'id'>), id: docSnap.id });
     });
     return items;
   } catch (error) {
@@ -175,9 +183,9 @@ export async function getWhatIDoItemsFromFirestore(): Promise<WhatIDoItem[]> {
   }
 }
 
-export async function updateWhatIDoItemInFirestore(id: number, item: Partial<WhatIDoItem>) {
+export async function updateWhatIDoItemInFirestore(id: string, item: Partial<WhatIDoItem>) {
   try {
-    const itemRef = doc(db, COLLECTIONS.WHAT_I_DO, id.toString());
+    const itemRef = doc(db, COLLECTIONS.WHAT_I_DO, id);
     await updateDoc(itemRef, item);
   } catch (error) {
     console.error("Error updating what I do item:", error);
@@ -185,9 +193,13 @@ export async function updateWhatIDoItemInFirestore(id: number, item: Partial<Wha
   }
 }
 
-export async function deleteWhatIDoItemFromFirestore(id: number) {
+export async function deleteWhatIDoItemFromFirestore(id: string) {
   try {
-    await deleteDoc(doc(db, COLLECTIONS.WHAT_I_DO, id.toString()));
+    if (!id || typeof id !== 'string') {
+      throw new Error('Invalid what I do item ID provided');
+    }
+    const itemRef = doc(db, COLLECTIONS.WHAT_I_DO, id);
+    await deleteDoc(itemRef);
   } catch (error) {
     console.error("Error deleting what I do item:", error);
     throw error;
@@ -226,7 +238,7 @@ export async function addExperienceToFirestore(experience: Omit<Experience, 'id'
       ...experience,
       createdAt: new Date().toISOString().split('T')[0]
     });
-    return { id: docRef.id, ...experience };
+    return { id: docRef.id, ...experience } as Experience;
   } catch (error) {
     console.error("Error adding experience:", error);
     throw error;
@@ -238,8 +250,8 @@ export async function getExperiencesFromFirestore(): Promise<Experience[]> {
     const q = query(collection(db, COLLECTIONS.EXPERIENCES), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     const experiences: Experience[] = [];
-    querySnapshot.forEach((doc) => {
-      experiences.push({ id: parseInt(doc.id), ...doc.data() } as Experience);
+    querySnapshot.forEach((docSnap) => {
+      experiences.push({ ...(docSnap.data() as Omit<Experience, 'id'>), id: docSnap.id });
     });
     return experiences;
   } catch (error) {
@@ -248,9 +260,9 @@ export async function getExperiencesFromFirestore(): Promise<Experience[]> {
   }
 }
 
-export async function updateExperienceInFirestore(id: number, experience: Partial<Experience>) {
+export async function updateExperienceInFirestore(id: string, experience: Partial<Experience>) {
   try {
-    const experienceRef = doc(db, COLLECTIONS.EXPERIENCES, id.toString());
+    const experienceRef = doc(db, COLLECTIONS.EXPERIENCES, id);
     await updateDoc(experienceRef, experience);
   } catch (error) {
     console.error("Error updating experience:", error);
@@ -258,9 +270,13 @@ export async function updateExperienceInFirestore(id: number, experience: Partia
   }
 }
 
-export async function deleteExperienceFromFirestore(id: number) {
+export async function deleteExperienceFromFirestore(id: string) {
   try {
-    await deleteDoc(doc(db, COLLECTIONS.EXPERIENCES, id.toString()));
+    if (!id || typeof id !== 'string') {
+      throw new Error('Invalid experience ID provided');
+    }
+    const experienceRef = doc(db, COLLECTIONS.EXPERIENCES, id);
+    await deleteDoc(experienceRef);
   } catch (error) {
     console.error("Error deleting experience:", error);
     throw error;
@@ -274,7 +290,7 @@ export async function addEducationToFirestore(education: Omit<Education, 'id'>) 
       ...education,
       createdAt: new Date().toISOString().split('T')[0]
     });
-    return { id: docRef.id, ...education };
+    return { id: docRef.id, ...education } as Education;
   } catch (error) {
     console.error("Error adding education:", error);
     throw error;
@@ -286,8 +302,8 @@ export async function getEducationsFromFirestore(): Promise<Education[]> {
     const q = query(collection(db, COLLECTIONS.EDUCATIONS), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     const educations: Education[] = [];
-    querySnapshot.forEach((doc) => {
-      educations.push({ id: parseInt(doc.id), ...doc.data() } as Education);
+    querySnapshot.forEach((docSnap) => {
+      educations.push({ ...(docSnap.data() as Omit<Education, 'id'>), id: docSnap.id });
     });
     return educations;
   } catch (error) {
@@ -296,9 +312,9 @@ export async function getEducationsFromFirestore(): Promise<Education[]> {
   }
 }
 
-export async function updateEducationInFirestore(id: number, education: Partial<Education>) {
+export async function updateEducationInFirestore(id: string, education: Partial<Education>) {
   try {
-    const educationRef = doc(db, COLLECTIONS.EDUCATIONS, id.toString());
+    const educationRef = doc(db, COLLECTIONS.EDUCATIONS, id);
     await updateDoc(educationRef, education);
   } catch (error) {
     console.error("Error updating education:", error);
@@ -306,9 +322,13 @@ export async function updateEducationInFirestore(id: number, education: Partial<
   }
 }
 
-export async function deleteEducationFromFirestore(id: number) {
+export async function deleteEducationFromFirestore(id: string) {
   try {
-    await deleteDoc(doc(db, COLLECTIONS.EDUCATIONS, id.toString()));
+    if (!id || typeof id !== 'string') {
+      throw new Error('Invalid education ID provided');
+    }
+    const educationRef = doc(db, COLLECTIONS.EDUCATIONS, id);
+    await deleteDoc(educationRef);
   } catch (error) {
     console.error("Error deleting education:", error);
     throw error;

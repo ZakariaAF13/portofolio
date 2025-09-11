@@ -27,8 +27,9 @@ import {
 } from 'lucide-react';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
-import { motion } from 'framer-motion';
 import type { WhatIDoItem } from '../types';
+import SuccessModal from '../components/SuccessModal';
+import { motion } from 'framer-motion';
 
 const iconOptions = [
   { name: 'Code', icon: Code },
@@ -231,51 +232,73 @@ export default function AboutPage() {
   const [whatIDoFormData, setWhatIDoFormData] = useState({
     title: '',
     description: '',
-    icon: 'Code',
-    iconColor: 'text-blue-500',
-    backgroundColor: 'bg-blue-50'
+    icon: 'FiCode',
+    iconColor: '#3B82F6',
+    backgroundColor: '#EFF6FF'
   });
-  
+
+  // Success modal state
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success' as 'success' | 'info' | 'warning'
+  });
+
   const [formData, setFormData] = useState({
-    bio: profile.bio || '',
+    bio: profile?.bio || '',
   });
 
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(formData);
-    setIsEditing(false);
+    try {
+      await updateProfile(formData);
+      setIsEditing(false);
+      showSuccessModal('About Updated!', 'Your about information has been updated successfully.');
+    } catch (error) {
+      console.error('Error updating about:', error);
+      showSuccessModal('Error', 'Failed to update about information. Please try again.', 'warning');
+    }
   };
 
   const handleCancel = () => {
     setFormData({
-      bio: profile.bio || '',
+      bio: profile?.bio || '',
     });
     setIsEditing(false);
   };
 
-  const handleWhatIDoSubmit = (e: React.FormEvent) => {
+  const handleWhatIDoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingWhatIDoItem) {
-      updateWhatIDoItem(editingWhatIDoItem.id, whatIDoFormData);
-    } else {
-      addWhatIDoItem({
-        ...whatIDoFormData,
-        createdAt: new Date().toISOString().split('T')[0]
-      });
+    try {
+      if (editingWhatIDoItem) {
+        await updateWhatIDoItem(editingWhatIDoItem.id, whatIDoFormData);
+        showSuccessModal('Item Updated!', `"${whatIDoFormData.title}" has been updated successfully.`);
+      } else {
+        await addWhatIDoItem({
+          ...whatIDoFormData,
+          createdAt: new Date().toISOString().split('T')[0]
+        });
+        showSuccessModal('Item Added!', `"${whatIDoFormData.title}" has been added successfully.`);
+      }
+      
+      setIsWhatIDoModalOpen(false);
+      setEditingWhatIDoItem(null);
+      setWhatIDoFormData({ title: '', description: '', icon: 'FiCode', iconColor: '#3B82F6', backgroundColor: '#EFF6FF' });
+    } catch (error) {
+      console.error('Error saving what I do item:', error);
+      showSuccessModal('Error', 'Failed to save item. Please try again.', 'warning');
     }
-    
-    resetWhatIDoForm();
   };
 
   const resetWhatIDoForm = () => {
     setWhatIDoFormData({
       title: '',
       description: '',
-      icon: 'Code',
-      iconColor: 'text-blue-500',
-      backgroundColor: 'bg-blue-50'
+      icon: 'FiCode',
+      iconColor: '#3B82F6',
+      backgroundColor: '#EFF6FF'
     });
     setEditingWhatIDoItem(null);
     setIsWhatIDoModalOpen(false);
@@ -293,10 +316,34 @@ export default function AboutPage() {
     setIsWhatIDoModalOpen(true);
   };
 
-  const handleDeleteWhatIDo = (id: number) => {
+  const handleDeleteWhatIDo = async (id: string, title: string) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      deleteWhatIDoItem(id);
+      try {
+        await deleteWhatIDoItem(id);
+        showSuccessModal('Item Deleted!', `"${title}" has been deleted successfully.`);
+      } catch (error) {
+        console.error('Error deleting what I do item:', error);
+        showSuccessModal('Error', 'Failed to delete item. Please try again.', 'warning');
+      }
     }
+  };
+
+  const showSuccessModal = (title: string, message: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    setSuccessModal({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const closeSuccessModal = () => {
+    setSuccessModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'success'
+    });
   };
 
   return (
@@ -380,7 +427,7 @@ export default function AboutPage() {
                 <h3 className={`text-lg font-semibold mb-4 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>About Me</h3>
                 <div className={`prose max-w-none ${isLightMode ? 'prose-gray' : 'prose-invert'}`}>
                   <p className={`leading-relaxed ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
-                    {profile.bio || 'Add your bio description here. This will appear in the About section of your portfolio.'}
+                    {profile?.bio || 'Add your bio description here. This will appear in the About section of your portfolio.'}
                   </p>
                 </div>
               </div>
@@ -418,7 +465,7 @@ export default function AboutPage() {
                             <FiEdit2 size={14} />
                           </button>
                           <button
-                            onClick={() => handleDeleteWhatIDo(item.id)}
+                            onClick={() => handleDeleteWhatIDo(item.id, item.title)}
                             className={`p-1.5 text-gray-500 hover:text-red-600 rounded transition-colors ${isLightMode ? 'hover:bg-red-50' : 'hover:bg-red-900/30'}`}
                           >
                             <FiTrash2 size={14} />
@@ -602,6 +649,15 @@ export default function AboutPage() {
             </motion.div>
           </div>
         )}
+
+        {/* Success Modal */}
+        <SuccessModal
+          isOpen={successModal.isOpen}
+          onClose={closeSuccessModal}
+          title={successModal.title}
+          message={successModal.message}
+          type={successModal.type}
+        />
       </div>
     </div>
   );

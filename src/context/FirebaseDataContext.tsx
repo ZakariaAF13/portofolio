@@ -41,14 +41,14 @@ interface FirebaseDataContextType {
   // Projects
   projects: Project[];
   addProject: (project: Omit<Project, 'id'>) => Promise<void>;
-  updateProject: (id: number, project: Partial<Project>) => Promise<void>;
-  deleteProject: (id: number) => Promise<void>;
+  updateProject: (id: string, project: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   
   // Skills
   skills: Skill[];
   addSkill: (skill: Omit<Skill, 'id'>) => Promise<void>;
-  updateSkill: (id: number, skill: Partial<Skill>) => Promise<void>;
-  deleteSkill: (id: number) => Promise<void>;
+  updateSkill: (id: string, skill: Partial<Skill>) => Promise<void>;
+  deleteSkill: (id: string) => Promise<void>;
   
   // Profile
   profile: Profile | null;
@@ -57,8 +57,8 @@ interface FirebaseDataContextType {
   // What I Do
   whatIDoItems: WhatIDoItem[];
   addWhatIDoItem: (item: Omit<WhatIDoItem, 'id'>) => Promise<void>;
-  updateWhatIDoItem: (id: number, item: Partial<WhatIDoItem>) => Promise<void>;
-  deleteWhatIDoItem: (id: number) => Promise<void>;
+  updateWhatIDoItem: (id: string, item: Partial<WhatIDoItem>) => Promise<void>;
+  deleteWhatIDoItem: (id: string) => Promise<void>;
 
   // Knowledge (badge list)
   knowledge: string[];
@@ -69,14 +69,14 @@ interface FirebaseDataContextType {
   // Experience
   experiences: Experience[];
   addExperience: (experience: Omit<Experience, 'id'>) => Promise<void>;
-  updateExperience: (id: number, experience: Partial<Experience>) => Promise<void>;
-  deleteExperience: (id: number) => Promise<void>;
+  updateExperience: (id: string, experience: Partial<Experience>) => Promise<void>;
+  deleteExperience: (id: string) => Promise<void>;
 
   // Education
   educations: Education[];
   addEducation: (education: Omit<Education, 'id'>) => Promise<void>;
-  updateEducation: (id: number, education: Partial<Education>) => Promise<void>;
-  deleteEducation: (id: number) => Promise<void>;
+  updateEducation: (id: string, education: Partial<Education>) => Promise<void>;
+  deleteEducation: (id: string) => Promise<void>;
 
   // Utility functions
   refreshData: () => Promise<void>;
@@ -86,7 +86,7 @@ const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(u
 
 // Default profile data
 const defaultProfile: Profile = {
-  id: 1,
+  id: 'main',
   name: 'Mohammad Zakaria Akbar Falah',
   title: 'Frontend Web Developer',
   email: 'Akbarflh013@gmail.com',
@@ -180,7 +180,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateProject = async (id: number, projectData: Partial<Project>) => {
+  const updateProject = async (id: string, projectData: Partial<Project>) => {
     try {
       await updateProjectInFirestore(id, projectData);
       setProjects(prev => prev.map(p => p.id === id ? { ...p, ...projectData } : p));
@@ -190,7 +190,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteProject = async (id: number) => {
+  const deleteProject = async (id: string) => {
     try {
       await deleteProjectFromFirestore(id);
       setProjects(prev => prev.filter(p => p.id !== id));
@@ -211,7 +211,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateSkill = async (id: number, skillData: Partial<Skill>) => {
+  const updateSkill = async (id: string, skillData: Partial<Skill>) => {
     try {
       await updateSkillInFirestore(id, skillData);
       setSkills(prev => prev.map(s => s.id === id ? { ...s, ...skillData } : s));
@@ -221,7 +221,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteSkill = async (id: number) => {
+  const deleteSkill = async (id: string) => {
     try {
       await deleteSkillFromFirestore(id);
       setSkills(prev => prev.filter(s => s.id !== id));
@@ -253,7 +253,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateWhatIDoItem = async (id: number, itemData: Partial<WhatIDoItem>) => {
+  const updateWhatIDoItem = async (id: string, itemData: Partial<WhatIDoItem>) => {
     try {
       await updateWhatIDoItemInFirestore(id, itemData);
       setWhatIDoItems(prev => prev.map(item => item.id === id ? { ...item, ...itemData } : item));
@@ -263,7 +263,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteWhatIDoItem = async (id: number) => {
+  const deleteWhatIDoItem = async (id: string) => {
     try {
       await deleteWhatIDoItemFromFirestore(id);
       setWhatIDoItems(prev => prev.filter(item => item.id !== id));
@@ -318,7 +318,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateExperience = async (id: number, experienceData: Partial<Experience>) => {
+  const updateExperience = async (id: string, experienceData: Partial<Experience>) => {
     try {
       await updateExperienceInFirestore(id, experienceData);
       setExperiences(prev => prev.map(exp => exp.id === id ? { ...exp, ...experienceData } : exp));
@@ -328,7 +328,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteExperience = async (id: number) => {
+  const deleteExperience = async (id: string) => {
     try {
       await deleteExperienceFromFirestore(id);
       setExperiences(prev => prev.filter(exp => exp.id !== id));
@@ -349,7 +349,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateEducation = async (id: number, educationData: Partial<Education>) => {
+  const updateEducation = async (id: string, educationData: Partial<Education>) => {
     try {
       await updateEducationInFirestore(id, educationData);
       setEducations(prev => prev.map(edu => edu.id === id ? { ...edu, ...educationData } : edu));
@@ -359,7 +359,7 @@ export function FirebaseDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteEducation = async (id: number) => {
+  const deleteEducation = async (id: string) => {
     try {
       await deleteEducationFromFirestore(id);
       setEducations(prev => prev.filter(edu => edu.id !== id));

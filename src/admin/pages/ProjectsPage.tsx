@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Project } from '../types';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import SuccessModal from '../components/SuccessModal';
 
 export default function ProjectsPage() {
   const { projects, addProject, updateProject, deleteProject } = useFirebaseData();
@@ -23,6 +25,22 @@ export default function ProjectsPage() {
   });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Delete confirmation modal state
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    id: null as string | null,
+    name: '',
+    isLoading: false
+  });
+
+  // Success modal state
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success' as 'success' | 'info' | 'warning'
+  });
 
   const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -100,34 +118,95 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const projectData: Project = {
-      id: editingProject?.id || Date.now(),
-      title: formData.title,
-      category: formData.category === 'Other' ? formData.customCategory : formData.category,
-      status: formData.status,
-      description: formData.description,
-      technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
-      imageUrl: formData.imageUrl,
-      tiktokUrl: formData.tiktokUrl,
-      createdAt: editingProject?.createdAt || new Date().toISOString().split('T')[0],
-    };
-
-    if (editingProject) {
-      updateProject(editingProject.id, projectData);
-    } else {
-      addProject(projectData);
+    try {
+      if (editingProject) {
+        await updateProject(editingProject.id, {
+          title: formData.title,
+          category: formData.category === 'Other' ? formData.customCategory : formData.category,
+          status: formData.status,
+          description: formData.description,
+          technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
+          imageUrl: formData.imageUrl,
+          tiktokUrl: formData.tiktokUrl,
+        });
+        showSuccessModal('Project Updated!', `"${formData.title}" has been updated successfully.`);
+      } else {
+        await addProject({
+          title: formData.title,
+          category: formData.category === 'Other' ? formData.customCategory : formData.category,
+          status: formData.status,
+          description: formData.description,
+          technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
+          imageUrl: formData.imageUrl,
+          tiktokUrl: formData.tiktokUrl,
+          createdAt: new Date().toISOString().split('T')[0],
+        });
+        showSuccessModal('Project Added!', `"${formData.title}" has been added successfully.`);
+      }
+      closeModal();
+    } catch (error) {
+      console.error('Error saving project:', error);
+      showSuccessModal('Error', 'Failed to save project. Please try again.', 'warning');
     }
-    
-    closeModal();
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this project?')) {
-      deleteProject(id);
+  const openDeleteModal = (id: string, name: string) => {
+    setDeleteModal({
+      isOpen: true,
+      id,
+      name,
+      isLoading: false
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      id: null,
+      name: '',
+      isLoading: false
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id) return;
+
+    setDeleteModal(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      await deleteProject(deleteModal.id);
+      showSuccessModal('Project Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      showSuccessModal('Error', 'Failed to delete project. Please try again.', 'warning');
+      setDeleteModal(prev => ({ ...prev, isLoading: false }));
     }
+  };
+
+  const showSuccessModal = (title: string, message: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    setSuccessModal({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const closeSuccessModal = () => {
+    setSuccessModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'success'
+    });
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    openDeleteModal(id, name);
   };
 
   return (
@@ -191,7 +270,7 @@ export default function ProjectsPage() {
                           <FiEdit />
                         </button>
                         <button 
-                          onClick={() => handleDelete(project.id)}
+                          onClick={() => handleDelete(project.id, project.title)}
                           className={`transition-colors ${isLightMode ? 'text-red-600 hover:text-red-800' : 'text-red-400 hover:text-red-300'}`}
                         >
                           <FiTrash />
@@ -205,7 +284,7 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {/* Modal */}
+        {/* Add/Edit Modal */}
         <AnimatePresence>
           {isModalOpen && (
             <motion.div
@@ -433,6 +512,25 @@ export default function ProjectsPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          title="Delete Project"
+          message={`Are you sure you want to delete "${deleteModal.name}"? This action cannot be undone.`}
+          isLoading={deleteModal.isLoading}
+        />
+
+        {/* Success Modal */}
+        <SuccessModal
+          isOpen={successModal.isOpen}
+          onClose={closeSuccessModal}
+          title={successModal.title}
+          message={successModal.message}
+          type={successModal.type}
+        />
       </div>
     </div>
   );

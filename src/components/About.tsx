@@ -23,7 +23,7 @@ import {
   VolumeX, Play, Pause, Square, SkipBack, SkipForward, Repeat,
   Shuffle, FastForward, Rewind, Circle, StopCircle, PlayCircle
 } from 'lucide-react';
-import { useData } from '../context/DataContext';
+import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 
 interface AboutProps {
@@ -58,7 +58,7 @@ const iconMap = {
 };
 
 export default function About({ theme }: AboutProps) {
-  const { profile, whatIDoItems } = useData();
+  const { profile, whatIDoItems } = useFirebaseData();
   
   const cardClass = theme === 'dark' 
     ? 'bg-slate-800 border border-slate-700' 

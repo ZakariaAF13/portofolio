@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
-import { DataProvider } from './context/DataContext';
+import { useFirebaseData } from './context/FirebaseDataContext';
 import Navigation from './components/Navigation';
 import Sidebar from './components/Sidebar';
 import Projects from './components/Projects';
@@ -12,6 +12,19 @@ import type { Section } from './types';
 function AppContent() {
   const [activeSection, setActiveSection] = useState<Section>('project');
   const { theme } = useTheme();
+  const firebaseData = useFirebaseData();
+
+  // Show loading state while Firebase data is loading
+  if (!firebaseData.profile) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${theme}`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>Loading portfolio...</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -63,11 +76,9 @@ function AppContent() {
 
 function App() {
   return (
-    <DataProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-    </DataProvider>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

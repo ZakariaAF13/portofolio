@@ -86,6 +86,53 @@ src/
 4. Use JWT for subsequent API requests
 5. On logout, clear JWT and redirect to login
 
+## Screenshots
+
+Berikut tampilan halaman aplikasi (public) dan dashboard admin. Simpan file gambar di folder `public/screenshots/` lalu sesuaikan nama file pada README ini jika berbeda.
+
+### Public Portfolio
+
+- Halaman Resume
+
+  ![Resume Page](public/screenshots/resume.jpg)
+
+- Halaman About
+
+  ![About Page](public/screenshots/about.jpg)
+
+- Halaman Contact
+
+  ![Contact Page](public/screenshots/contact.jpg)
+
+- Halaman Projects
+
+  ![Projects Page](public/screenshots/projects.jpg)
+
+### Admin Dashboard
+
+- Dashboard Utama
+
+  ![Admin Dashboard](public/screenshots/admin-dashboard.jpg)
+
+- Manajemen Projects
+
+  ![Admin Projects](public/screenshots/admin-projects.jpg)
+
+- Manajemen Resume (Skills, Experience, Education, Knowledge)
+
+  ![Admin Resume](public/screenshots/admin-resume.jpg)
+
+- Halaman About (What I Do & Bio)
+
+  ![Admin About](public/screenshots/admin-about.jpg)
+
+Catatan:
+
+- Jika folder `public/screenshots/` belum ada, buat folder tersebut dan tambahkan gambar. Nama file bebas, pastikan mengganti path pada README ini.
+- Anda bisa mengambil screenshot langsung dari browser saat menjalankan `npm run dev` di:
+  - Public: `http://localhost:5174`
+  - Admin: `http://localhost:5174/admin`
+
 ## Contributing
 
 1. Create a new branch

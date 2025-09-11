@@ -22,7 +22,7 @@ import {
   FaVimeo,
   FaBehance
 } from 'react-icons/fa';
-import { useData } from '../context/DataContext';
+import { useFirebaseData } from '../context/FirebaseDataContext';
 import { useTheme } from '../context/ThemeContext';
 
 interface SocialMediaIconsProps {
@@ -38,7 +38,7 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
   showLabels = false,
   variant = 'default'
 }) => {
-  const { profile } = useData();
+  const { profile } = useFirebaseData();
   const { theme } = useTheme();
 
   // Icon mapping for dynamic social media fields
@@ -92,7 +92,7 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
   };
 
   // Convert dynamic social media fields to the expected format
-  const socialLinks = (profile.socialMediaFields || [])
+  const socialLinks = (profile?.socialMediaFields || [])
     .filter(field => field.url)
     .map(field => {
       const IconComponent = iconMap[field.icon] || FiExternalLink;

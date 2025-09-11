@@ -1,5 +1,5 @@
 import { Calendar, MapPin, Building } from 'lucide-react';
-import { useData } from '../context/DataContext';
+import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 
 interface ResumeProps {
@@ -8,7 +8,7 @@ interface ResumeProps {
 
 
 export default function Resume({ theme }: ResumeProps) {
-  const { skills, knowledge, experiences, educations } = useData();
+  const { skills, knowledge, experiences, educations } = useFirebaseData();
   
   const cardClass = theme === 'dark' 
     ? 'bg-slate-800 border border-slate-700' 
@@ -52,7 +52,7 @@ export default function Resume({ theme }: ResumeProps) {
           <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>Experience</h3>
           <div className="space-y-6">
             {experiences.map((exp, index) => (
-              <div key={index} className="relative pl-6 pb-6 group">
+              <div key={exp.id || `exp-${index}`} className="relative pl-6 pb-6 group">
                 {/* Animated vertical line */}
                 <span className="absolute left-0 top-0 w-1.5 h-full bg-blue-600 rounded-full transform origin-top scale-y-75 group-hover:scale-y-100 transition-transform duration-300"></span>
 
@@ -91,7 +91,7 @@ export default function Resume({ theme }: ResumeProps) {
           <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>Education</h3>
           <div className="space-y-6">
             {educations.map((edu, index) => (
-              <div key={index} className="relative pl-6 pb-6 group">
+              <div key={edu.id || `edu-${index}`} className="relative pl-6 pb-6 group">
                 {/* Animated vertical line */}
                 <span className="absolute left-0 top-0 w-1.5 h-full bg-green-500 rounded-full transform origin-top scale-y-75 group-hover:scale-y-100 transition-transform duration-300"></span>
 
@@ -126,8 +126,8 @@ export default function Resume({ theme }: ResumeProps) {
           <div>
             <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>Working Skills</h3>
             <div>
-              {skills.map((skill) => (
-                <div key={skill.id} className="mb-5">
+              {skills.map((skill, index) => (
+                <div key={skill.id || `skill-${index}`} className="mb-5">
                   <div className={`flex justify-between text-xs ${mutedTextClass} mb-1 font-normal`}>
                     <span className={textClass}>{skill.name}{skill.category ? ` (${skill.category})` : ''}</span>
                     <span>{Math.round(skill.percentage ?? 0)}%</span>
@@ -147,9 +147,9 @@ export default function Resume({ theme }: ResumeProps) {
           <div>
             <h2 className={`text-xl font-semibold ${subtitleClass} mb-6`}>Knowledge</h2>
             <div className="flex flex-wrap gap-3">
-              {knowledge.map((item) => (
+              {knowledge.map((item, index) => (
                 <span
-                  key={item}
+                  key={`knowledge-${index}`}
                   className={`text-xs font-normal rounded-md py-2 px-4 transition-colors ${
                     theme === 'dark'
                       ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'

@@ -1,39 +1,39 @@
 import { Download, Phone, Mail, MapPin, Gift, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import { useData } from '../context/DataContext';
+import { useFirebaseData } from '../context/FirebaseDataContext';
 import SocialMediaIcons from './SocialMediaIcons';
 import type { ContactInfo } from '../types';
 
 export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
-  const { profile } = useData();
+  const { profile } = useFirebaseData();
   
   const contactInfo: ContactInfo[] = [
     {
       icon: 'phone',
       label: 'Phone',
-      value: profile.phone,
+      value: profile?.phone || '',
       backgroundColor: 'bg-pink-100',
       iconColor: 'text-pink-500'
     },
     {
       icon: 'email',
       label: 'Email', 
-      value: profile.email,
+      value: profile?.email || '',
       backgroundColor: 'bg-green-100',
       iconColor: 'text-green-500'
     },
     {
       icon: 'location',
       label: 'Location',
-      value: profile.location,
+      value: profile?.location || '',
       backgroundColor: 'bg-pink-100',
       iconColor: 'text-pink-500'
     },
     {
       icon: 'birthday',
       label: 'Birthday',
-      value: profile.birthday,
+      value: profile?.birthday || '',
       backgroundColor: 'bg-blue-100',
       iconColor: 'text-blue-500'
     }
@@ -73,15 +73,15 @@ export default function Sidebar() {
       
       <div className="w-28 h-28 rounded-2xl overflow-hidden mb-4 shadow-lg">
         <img 
-          src={profile.imageUrl || ""} 
-          alt={`Portrait of ${profile.name}`}
+          src={profile?.imageUrl || ""} 
+          alt={`Portrait of ${profile?.name || 'User'}`}
           className="w-full h-full object-cover"
         />
       </div>
       
-      <h2 className={`font-bold text-xl text-center ${textClass} w-full`}>{profile.name}</h2>
+      <h2 className={`font-bold text-xl text-center ${textClass} w-full`}>{profile?.name || 'Loading...'}</h2>
       <span className={`mt-2 mb-5 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'} px-4 py-1 rounded-full text-sm font-medium ${subtitleClass}`}>
-        {profile.title}
+        {profile?.title || 'Loading...'}
       </span>
       
       <div className="mb-6">
@@ -110,7 +110,7 @@ export default function Sidebar() {
       </div>
       
       <a 
-        href={profile.cvUrl || '#'} 
+        href={profile?.cvUrl || '#'} 
         target="_blank" 
         rel="noopener noreferrer"
         className="w-full mt-6 bg-blue-600 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all duration-300 shadow-lg shadow-blue-500/20"

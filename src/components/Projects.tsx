@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useData } from '../context/DataContext';
+import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 
 interface ProjectsProps {
@@ -7,7 +7,7 @@ interface ProjectsProps {
 }
 
 export default function Projects({ theme }: ProjectsProps) {
-  const { projects } = useData();
+  const { projects } = useFirebaseData();
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   // Load TikTok embed script

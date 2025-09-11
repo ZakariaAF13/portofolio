@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
-import { useFirebaseAuth } from '../context/FirebaseAuthContext';
+import { useFirebaseAuth } from '../../context/FirebaseAuthContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import { Menu, Transition } from '@headlessui/react';
 import {

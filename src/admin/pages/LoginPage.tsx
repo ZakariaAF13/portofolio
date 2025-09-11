@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useFirebaseAuth } from '../context/FirebaseAuthContext';
+import { useFirebaseAuth } from '../../context/FirebaseAuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('admin@example.com');

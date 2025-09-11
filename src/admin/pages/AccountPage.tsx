@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useFirebaseAuth } from '../context/FirebaseAuthContext';
+import { useFirebaseAuth } from '../../context/FirebaseAuthContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 
 export default function AccountPage() {

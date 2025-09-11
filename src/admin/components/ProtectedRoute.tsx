@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useFirebaseAuth } from '../context/FirebaseAuthContext';
+import { useFirebaseAuth } from '../../context/FirebaseAuthContext';
 
 type ProtectedRouteProps = {
   children: React.ReactNode;

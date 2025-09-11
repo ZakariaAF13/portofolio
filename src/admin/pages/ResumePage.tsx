@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Skill, Experience, Education } from '../types';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import SuccessModal from '../components/SuccessModal';
 
 export default function ResumePage() {
   const { isLightMode } = useAdminTheme();
@@ -44,6 +46,23 @@ export default function ResumePage() {
     location: '',
   });
 
+  // Delete confirmation modal state
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    type: '' as 'skill' | 'knowledge' | 'experience' | 'education' | '',
+    id: null as string | number | null,
+    name: '',
+    isLoading: false
+  });
+
+  // Success modal state
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success' as 'success' | 'info' | 'warning'
+  });
+
   const filteredSkills = skills.filter(skill =>
     skill.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     skill.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -81,7 +100,7 @@ export default function ResumePage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const skillPayload = {
       name: formData.name,
@@ -91,19 +110,93 @@ export default function ResumePage() {
       createdAt: editingSkill?.createdAt || new Date().toISOString().split('T')[0],
     } as Omit<Skill, 'id'>;
 
-    if (editingSkill) {
-      updateSkill(editingSkill.id, skillPayload);
-    } else {
-      addSkill(skillPayload);
+    try {
+      if (editingSkill) {
+        await updateSkill(editingSkill.id, skillPayload);
+        showSuccessModal('Skill Updated!', `"${formData.name}" has been updated successfully.`);
+      } else {
+        await addSkill(skillPayload);
+        showSuccessModal('Skill Added!', `"${formData.name}" has been added successfully.`);
+      }
+      closeModal();
+    } catch (error) {
+      console.error('Error saving skill:', error);
+      showSuccessModal('Error', 'Failed to save skill. Please try again.', 'warning');
     }
-
-    closeModal();
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this skill?')) {
-      deleteSkill(id);
+  const openDeleteModal = (type: 'skill' | 'knowledge' | 'experience' | 'education', id: string | number, name: string) => {
+    setDeleteModal({
+      isOpen: true,
+      type,
+      id,
+      name,
+      isLoading: false
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      type: '',
+      id: null,
+      name: '',
+      isLoading: false
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id) return;
+
+    setDeleteModal(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      switch (deleteModal.type) {
+        case 'skill':
+          await deleteSkill(deleteModal.id as string);
+          showSuccessModal('Skill Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          break;
+        case 'knowledge':
+          await deleteKnowledge(deleteModal.id as number);
+          showSuccessModal('Knowledge Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          break;
+        case 'experience':
+          await deleteExperience(deleteModal.id as string);
+          showSuccessModal('Experience Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          break;
+        case 'education':
+          await deleteEducation(deleteModal.id as string);
+          showSuccessModal('Education Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          break;
+      }
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      showSuccessModal('Error', 'Failed to delete item. Please try again.', 'warning');
+      setDeleteModal(prev => ({ ...prev, isLoading: false }));
     }
+  };
+
+  const handleDelete = (id: string | number, name: string, type: 'skill' | 'knowledge' | 'experience' | 'education') => {
+    openDeleteModal(type, id, name);
+  };
+
+  const showSuccessModal = (title: string, message: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    setSuccessModal({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const closeSuccessModal = () => {
+    setSuccessModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'success'
+    });
   };
 
   const getLevelColor = (level: string) => {
@@ -120,8 +213,8 @@ export default function ResumePage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Skills</h1>
-            <p className={`mt-1 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your technical skills and expertise.</p>
+            <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Resume</h1>
+            <p className={`mt-1 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your technical skills, expertise, experiences, and education.</p>
           </div>
           <button 
             onClick={() => openModal()}
@@ -158,8 +251,8 @@ export default function ResumePage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredSkills.map(skill => (
-                  <tr key={skill.id} className={`border-b transition-colors ${isLightMode ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-slate-800 border-slate-700 hover:bg-slate-600'}`}>
+                {filteredSkills.map((skill, index) => (
+                  <tr key={skill.id || `skill-${index}`} className={`border-b transition-colors ${isLightMode ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-slate-800 border-slate-700 hover:bg-slate-600'}`}>
                     <td className={`px-6 py-4 font-medium whitespace-nowrap ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{skill.name}</td>
                     <td className="px-6 py-4">{skill.category}</td>
                     <td className="px-6 py-4">
@@ -188,7 +281,7 @@ export default function ResumePage() {
                           <FiEdit />
                         </button>
                         <button 
-                          onClick={() => handleDelete(skill.id)}
+                          onClick={() => handleDelete(skill.id, skill.name, 'skill')}
                           className={`transition-colors ${isLightMode ? 'text-red-600 hover:text-red-800' : 'text-red-400 hover:text-red-300'}`}
                         >
                           <FiTrash />
@@ -224,8 +317,8 @@ export default function ResumePage() {
           </div>
           <div className="p-4">
             <div className="space-y-4">
-              {experiences.map((exp) => (
-                <div key={exp.id} className={`p-4 rounded-lg border ${isLightMode ? 'border-gray-200 bg-gray-50' : 'border-slate-600 bg-slate-700'}`}>
+              {experiences.map((exp, index) => (
+                <div key={exp.id || `exp-${index}`} className={`p-4 rounded-lg border ${isLightMode ? 'border-gray-200 bg-gray-50' : 'border-slate-600 bg-slate-700'}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className={`font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{exp.title}</h3>
@@ -251,11 +344,7 @@ export default function ResumePage() {
                         <FiEdit />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this experience?')) {
-                            deleteExperience(exp.id);
-                          }
-                        }}
+                        onClick={() => handleDelete(exp.id, exp.title, 'experience')}
                         className={`${isLightMode ? 'text-red-600 hover:text-red-800' : 'text-red-400 hover:text-red-300'} text-sm`}
                       >
                         <FiTrash />
@@ -289,8 +378,8 @@ export default function ResumePage() {
           </div>
           <div className="p-4">
             <div className="space-y-4">
-              {educations.map((edu) => (
-                <div key={edu.id} className={`p-4 rounded-lg border ${isLightMode ? 'border-gray-200 bg-gray-50' : 'border-slate-600 bg-slate-700'}`}>
+              {educations.map((edu, index) => (
+                <div key={edu.id || `edu-${index}`} className={`p-4 rounded-lg border ${isLightMode ? 'border-gray-200 bg-gray-50' : 'border-slate-600 bg-slate-700'}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className={`font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{edu.degree}</h3>
@@ -314,11 +403,7 @@ export default function ResumePage() {
                         <FiEdit />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this education entry?')) {
-                            deleteEducation(edu.id);
-                          }
-                        }}
+                        onClick={() => handleDelete(edu.id, edu.degree, 'education')}
                         className={`${isLightMode ? 'text-red-600 hover:text-red-800' : 'text-red-400 hover:text-red-300'} text-sm`}
                       >
                         <FiTrash />
@@ -358,7 +443,7 @@ export default function ResumePage() {
                     <FiEdit />
                   </button>
                   <button
-                    onClick={() => deleteKnowledge(index)}
+                    onClick={() => handleDelete(index, item, 'knowledge')}
                     className={`${isLightMode ? 'text-red-600 hover:text-red-800' : 'text-red-400 hover:text-red-300'} text-sm`}
                   >
                     <FiTrash />
@@ -515,7 +600,7 @@ export default function ResumePage() {
                     </button>
                   </div>
                   <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                       e.preventDefault();
                       const payload = {
                         title: experienceFormData.title,
@@ -525,14 +610,21 @@ export default function ResumePage() {
                         description: experienceFormData.description,
                         createdAt: editingExperience?.createdAt || new Date().toISOString().split('T')[0],
                       };
-                      if (editingExperience) {
-                        updateExperience(editingExperience.id, payload);
-                      } else {
-                        addExperience(payload);
+                      try {
+                        if (editingExperience) {
+                          await updateExperience(editingExperience.id, payload);
+                          showSuccessModal('Experience Updated!', `"${experienceFormData.title}" has been updated successfully.`);
+                        } else {
+                          await addExperience(payload);
+                          showSuccessModal('Experience Added!', `"${experienceFormData.title}" has been added successfully.`);
+                        }
+                        setIsExperienceModalOpen(false);
+                        setEditingExperience(null);
+                        setExperienceFormData({ title: '', company: '', period: '', location: '', description: '' });
+                      } catch (error) {
+                        console.error('Error saving experience:', error);
+                        showSuccessModal('Error', 'Failed to save experience. Please try again.', 'warning');
                       }
-                      setIsExperienceModalOpen(false);
-                      setEditingExperience(null);
-                      setExperienceFormData({ title: '', company: '', period: '', location: '', description: '' });
                     }}
                     className="space-y-4"
                   >
@@ -653,7 +745,7 @@ export default function ResumePage() {
                     </button>
                   </div>
                   <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                       e.preventDefault();
                       const payload = {
                         degree: educationFormData.degree,
@@ -662,14 +754,21 @@ export default function ResumePage() {
                         location: educationFormData.location,
                         createdAt: editingEducation?.createdAt || new Date().toISOString().split('T')[0],
                       };
-                      if (editingEducation) {
-                        updateEducation(editingEducation.id, payload);
-                      } else {
-                        addEducation(payload);
+                      try {
+                        if (editingEducation) {
+                          await updateEducation(editingEducation.id, payload);
+                          showSuccessModal('Education Updated!', `"${educationFormData.degree}" has been updated successfully.`);
+                        } else {
+                          await addEducation(payload);
+                          showSuccessModal('Education Added!', `"${educationFormData.degree}" has been added successfully.`);
+                        }
+                        setIsEducationModalOpen(false);
+                        setEditingEducation(null);
+                        setEducationFormData({ degree: '', institution: '', period: '', location: '' });
+                      } catch (error) {
+                        console.error('Error saving education:', error);
+                        showSuccessModal('Error', 'Failed to save education. Please try again.', 'warning');
                       }
-                      setIsEducationModalOpen(false);
-                      setEditingEducation(null);
-                      setEducationFormData({ degree: '', institution: '', period: '', location: '' });
                     }}
                     className="space-y-4"
                   >
@@ -825,6 +924,26 @@ export default function ResumePage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          title={`Delete ${deleteModal.type ? deleteModal.type.charAt(0).toUpperCase() + deleteModal.type.slice(1) : 'Item'}`}
+          message={`Are you sure you want to delete this ${deleteModal.type}? This action cannot be undone.`}
+          itemName={deleteModal.name}
+          isLoading={deleteModal.isLoading}
+        />
+
+        {/* Success Modal */}
+        <SuccessModal
+          isOpen={successModal.isOpen}
+          onClose={closeSuccessModal}
+          title={successModal.title}
+          message={successModal.message}
+          type={successModal.type}
+        />
       </div>
     </div>
   );

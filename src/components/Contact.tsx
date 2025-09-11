@@ -1,6 +1,6 @@
 import { Send, Phone, Mail, MapPin } from 'lucide-react';
 import { useForm, ValidationError } from '@formspree/react';
-import { useData } from '../context/DataContext';
+import { useFirebaseData } from '../context/FirebaseDataContext';
 import { useAnalytics, usePageTracking } from '../hooks/useAnalytics';
 import { addContactMessage } from '../utils/firestore';
 import type { Theme } from '../types';
@@ -10,7 +10,7 @@ interface ContactProps {
 }
 
 export default function Contact({ theme }: ContactProps) {
-  const { profile } = useData();
+  const { profile } = useFirebaseData();
   const [state, handleSubmit] = useForm("xgvldqev");
   const { trackContactFormSubmit } = useAnalytics();
   

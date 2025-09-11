@@ -4,17 +4,23 @@ import App from './App.tsx';
 import './index.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Admin from './admin/Admin';
+import { FirebaseAuthProvider } from './context/FirebaseAuthContext';
+import { FirebaseDataProvider } from './context/FirebaseDataContext';
 import './config/firebase';
 import './examples/firestoreExamples';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/admin/*" element={<Admin />} />
-        <Route path="/" element={<App />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <FirebaseAuthProvider>
+      <FirebaseDataProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/admin/*" element={<Admin />} />
+            <Route path="/" element={<App />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </FirebaseDataProvider>
+    </FirebaseAuthProvider>
   </StrictMode>
 );
