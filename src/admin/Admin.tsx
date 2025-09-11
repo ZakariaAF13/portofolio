@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { DataProvider } from '../context/DataContext';
+import { FirebaseAuthProvider } from './context/FirebaseAuthContext';
+import { FirebaseDataProvider } from '../context/FirebaseDataContext';
 import { ThemeProvider } from '../context/ThemeContext';
 import { AdminThemeProvider } from './context/AdminThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -16,10 +16,10 @@ import LoginPage from './pages/LoginPage';
 
 export default function Admin() {
   return (
-    <DataProvider>
+    <FirebaseDataProvider>
       <ThemeProvider>
         <AdminThemeProvider>
-          <AuthProvider>
+          <FirebaseAuthProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route
@@ -42,9 +42,9 @@ export default function Admin() {
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
             </Routes>
-          </AuthProvider>
+          </FirebaseAuthProvider>
         </AdminThemeProvider>
       </ThemeProvider>
-    </DataProvider>
+    </FirebaseDataProvider>
   );
 }

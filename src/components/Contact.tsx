@@ -1,6 +1,8 @@
 import { Send, Phone, Mail, MapPin } from 'lucide-react';
 import { useForm, ValidationError } from '@formspree/react';
 import { useData } from '../context/DataContext';
+import { useAnalytics, usePageTracking } from '../hooks/useAnalytics';
+import { addContactMessage } from '../utils/firestore';
 import type { Theme } from '../types';
 
 interface ContactProps {
@@ -10,6 +12,9 @@ interface ContactProps {
 export default function Contact({ theme }: ContactProps) {
   const { profile } = useData();
   const [state, handleSubmit] = useForm("xgvldqev");
+  const { trackContactFormSubmit } = useAnalytics();
+  
+  usePageTracking('Contact');
 
   const cardClass = theme === 'dark' 
     ? 'bg-slate-800 border border-slate-700' 
@@ -98,7 +103,30 @@ export default function Contact({ theme }: ContactProps) {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              
+              // Get form data
+              const formData = new FormData(e.currentTarget);
+              const contactData = {
+                name: formData.get('name') as string,
+                email: formData.get('email') as string,
+                subject: formData.get('subject') as string,
+                message: formData.get('message') as string
+              };
+              
+              try {
+                // Save to Firestore
+                await addContactMessage(contactData);
+                console.log('Message saved to Firestore');
+              } catch (error) {
+                console.error('Error saving to Firestore:', error);
+              }
+              
+              // Submit to Formspree
+              handleSubmit(e);
+              trackContactFormSubmit();
+            }} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <input

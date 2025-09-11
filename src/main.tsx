@@ -4,6 +4,8 @@ import App from './App.tsx';
 import './index.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Admin from './admin/Admin';
+import './config/firebase';
+import './examples/firestoreExamples';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,0 +1,64 @@
+// Firestore Security Rules - Copy paste ini ke Firebase Console → Firestore → Rules
+
+// OPSI 1: Development Rules (Lebih Permisif)
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+// OPSI 2: Production Rules (Lebih Ketat - Hanya Admin yang bisa Write)
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Portfolio collections - public read, admin write
+    match /portfolio_projects/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /portfolio_skills/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /portfolio_profile/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /portfolio_what_i_do/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /portfolio_knowledge/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /portfolio_experiences/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /portfolio_educations/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Contact messages - anyone can create, admin can read/update
+    match /contact_messages/{document} {
+      allow read, update: if request.auth != null && request.auth.token.admin == true;
+      allow create: if true; // Anyone can send contact messages
+    }
+  }
+}
+
+// CARA DEPLOY RULES:
+// 1. Buka Firebase Console → Firestore Database → Rules
+// 2. Copy paste salah satu rules di atas
+// 3. Klik "Publish"
