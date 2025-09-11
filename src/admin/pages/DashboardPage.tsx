@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useData } from '../../context/DataContext';
+import { useFirebaseAuth } from '../context/FirebaseAuthContext';
+import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import { 
   FiFileText, 
-  FiUsers, 
   FiTrendingUp, 
   FiAward, 
   FiUser, 
@@ -224,8 +223,8 @@ const ActivityItemComponent = ({ title, description, time, icon, status }: Omit<
 };
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const { projects, skills } = useData();
+  const { user } = useFirebaseAuth();
+  const { projects, skills } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [isLoading, setIsLoading] = useState(true);
 

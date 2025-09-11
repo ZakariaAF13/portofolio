@@ -10,7 +10,7 @@ service cloud.firestore {
   }
 }
 
-// OPSI 2: Production Rules (Lebih Ketat - Hanya Admin yang bisa Write)
+// PRODUCTION RULES - Copy paste ini ke Firebase Console → Firestore → Rules
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -52,7 +52,7 @@ service cloud.firestore {
     
     // Contact messages - anyone can create, admin can read/update
     match /contact_messages/{document} {
-      allow read, update: if request.auth != null && request.auth.token.admin == true;
+      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
       allow create: if true; // Anyone can send contact messages
     }
   }

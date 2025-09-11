@@ -1,14 +1,14 @@
 import { useState, useRef } from 'react';
 import { FiSave, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiCamera, FiUpload, FiPlus, FiTrash2, FiEdit3, FiDownload } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { useData } from '../../context/DataContext';
+import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Profile, SocialMediaField } from '../types';
 import IconPicker, { socialMediaIcons, type IconOption } from '../components/IconPicker';
 
 
 export default function ProfilePage() {
-  const { profile, updateProfile } = useData();
+  const { profile, updateProfile } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(profile);

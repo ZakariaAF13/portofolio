@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react';
 import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useData } from '../../context/DataContext';
+import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Project } from '../types';
 
 export default function ProjectsPage() {
-  const { projects, addProject, updateProject, deleteProject } = useData();
+  const { projects, addProject, updateProject, deleteProject } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);

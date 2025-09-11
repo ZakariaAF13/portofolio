@@ -25,7 +25,7 @@ import {
   VolumeX, Play, Pause, Square, SkipBack, SkipForward, Repeat,
   Shuffle, FastForward, Rewind, Circle, StopCircle, PlayCircle
 } from 'lucide-react';
-import { useData } from '../../context/DataContext';
+import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import { motion } from 'framer-motion';
 import type { WhatIDoItem } from '../types';
@@ -223,7 +223,7 @@ const backgroundOptions = [
 ];
 
 export default function AboutPage() {
-  const { profile, updateProfile, whatIDoItems, addWhatIDoItem, updateWhatIDoItem, deleteWhatIDoItem } = useData();
+  const { profile, updateProfile, whatIDoItems, addWhatIDoItem, updateWhatIDoItem, deleteWhatIDoItem } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isWhatIDoModalOpen, setIsWhatIDoModalOpen] = useState(false);

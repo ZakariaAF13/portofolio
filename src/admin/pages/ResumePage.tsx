@@ -3,11 +3,11 @@ import { FiPlus, FiEdit, FiTrash, FiSearch, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Skill, Experience, Education } from '../types';
-import { useData } from '../../context/DataContext';
+import { useFirebaseData } from '../../context/FirebaseDataContext';
 
 export default function ResumePage() {
   const { isLightMode } = useAdminTheme();
-  const { skills, addSkill, updateSkill, deleteSkill, knowledge, addKnowledge, updateKnowledge, deleteKnowledge, experiences, addExperience, updateExperience, deleteExperience, educations, addEducation, updateEducation, deleteEducation } = useData();
+  const { skills, addSkill, updateSkill, deleteSkill, knowledge, addKnowledge, updateKnowledge, deleteKnowledge, experiences, addExperience, updateExperience, deleteExperience, educations, addEducation, updateEducation, deleteEducation } = useFirebaseData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);

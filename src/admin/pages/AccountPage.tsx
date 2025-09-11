@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useFirebaseAuth } from '../context/FirebaseAuthContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 
 export default function AccountPage() {
-  const { updateEmail, updatePassword, user } = useAuth();
+  const { updateEmail, updatePassword, user } = useFirebaseAuth();
   const { isLightMode } = useAdminTheme();
 
   // Email form state

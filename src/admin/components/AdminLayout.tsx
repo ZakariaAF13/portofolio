@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useFirebaseAuth } from '../context/FirebaseAuthContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import { Menu, Transition } from '@headlessui/react';
 import {
@@ -31,7 +31,7 @@ function classNames(...classes: string[]) {
 }
 
 export default function AdminLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useFirebaseAuth();
   const { isLightMode, toggleToLightMode, toggleToDarkMode, toggleTheme } = useAdminTheme();
   const navigate = useNavigate();
   const location = useLocation();

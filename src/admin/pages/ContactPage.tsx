@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useData } from '../../context/DataContext';
+import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import { 
   FiMail, 
@@ -21,7 +21,7 @@ interface ContactInfo {
 }
 
 export default function ContactPage() {
-  const { profile, updateProfile } = useData();
+  const { profile, updateProfile } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [contactInfo, setContactInfo] = useState<ContactInfo>({

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useFirebaseAuth } from '../context/FirebaseAuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn } = useFirebaseAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,8 +19,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
-      if (error) throw error;
+      const result = await signIn(email, password);
+      if (result.error) throw result.error;
       
       // Redirect them back to the page they tried to visit when they were
       // redirected to the login page. Use { replace: true } so we don't create
