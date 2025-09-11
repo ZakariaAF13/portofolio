@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Send, Phone, Mail, MapPin } from 'lucide-react';
+import { useForm, ValidationError } from '@formspree/react';
 import { useData } from '../context/DataContext';
 import type { Theme } from '../types';
 
@@ -9,25 +9,7 @@ interface ContactProps {
 
 export default function Contact({ theme }: ContactProps) {
   const { profile } = useData();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Handle form submission here
-  };
+  const [state, handleSubmit] = useForm("xgvldqev");
 
   const cardClass = theme === 'dark' 
     ? 'bg-slate-800 border border-slate-700' 
@@ -103,53 +85,96 @@ export default function Contact({ theme }: ContactProps) {
         {/* Contact Form */}
         <div>
           <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>Send Message</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
-                required
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
-                required
-              />
+          {state.succeeded ? (
+            <div className={`p-6 rounded-lg border-2 border-green-500 ${theme === 'dark' ? 'bg-green-900/20 text-green-400' : 'bg-green-50 text-green-700'}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                  <Send size={16} className="text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">Message Sent Successfully!</h4>
+                  <p className="text-sm opacity-80">Thank you for reaching out. I'll get back to you soon.</p>
+                </div>
+              </div>
             </div>
-            <input
-              type="text"
-              name="subject"
-              placeholder="Subject"
-              value={formData.subject}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
-              required
-            />
-            <textarea
-              name="message"
-              placeholder="Your Message"
-              rows={5}
-              value={formData.message}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 resize-none ${inputClass}`}
-              required
-            ></textarea>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 flex items-center justify-center gap-2 font-medium transition-colors duration-200"
-            >
-              <Send size={16} />
-              Send Message
-            </button>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name"
+                    className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
+                    required
+                  />
+                  <ValidationError 
+                    prefix="Name" 
+                    field="name"
+                    errors={state.errors}
+                    className="text-red-500 text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Your Email"
+                    className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
+                    required
+                  />
+                  <ValidationError 
+                    prefix="Email" 
+                    field="email"
+                    errors={state.errors}
+                    className="text-red-500 text-sm mt-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="subject"
+                  placeholder="Subject"
+                  className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
+                  required
+                />
+                <ValidationError 
+                  prefix="Subject" 
+                  field="subject"
+                  errors={state.errors}
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+              <div>
+                <textarea
+                  name="message"
+                  placeholder="Your Message"
+                  rows={5}
+                  className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 resize-none ${inputClass}`}
+                  required
+                ></textarea>
+                <ValidationError 
+                  prefix="Message" 
+                  field="message"
+                  errors={state.errors}
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={state.submitting}
+                className={`w-full rounded-lg px-6 py-3 flex items-center justify-center gap-2 font-medium transition-colors duration-200 ${
+                  state.submitting 
+                    ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                <Send size={16} />
+                {state.submitting ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </section>
