@@ -18,11 +18,13 @@ const COLLECTIONS = {
   PROJECTS: 'portfolio_projects',
   SKILLS: 'portfolio_skills',
   PROFILE: 'portfolio_profile',
+  SETTINGS: 'portfolio_settings',
+  SECTIONS: 'portfolio_sections',
   WHAT_I_DO: 'portfolio_what_i_do',
   KNOWLEDGE: 'portfolio_knowledge',
   EXPERIENCES: 'portfolio_experiences',
   EDUCATIONS: 'portfolio_educations'
-};
+} as const;
 
 // Projects
 export async function addProjectToFirestore(project: Omit<Project, 'id'>) {
@@ -331,6 +333,107 @@ export async function deleteEducationFromFirestore(id: string) {
     await deleteDoc(educationRef);
   } catch (error) {
     console.error("Error deleting education:", error);
+    throw error;
+  }
+}
+
+// Portfolio Settings (single document: 'main')
+export type PortfolioSettings = {
+  hero_title: string;
+  hero_subtitle: string;
+  hero_image_url?: string;
+  profile_image_url?: string;
+  meta_title?: string;
+  meta_description?: string;
+  og_image_url?: string;
+  updated_at?: string;
+  // Optional contact & socials for preview/admin
+  email?: string;
+  phone?: string;
+  location?: string;
+  linkedin_url?: string;
+  github_url?: string;
+  twitter_url?: string;
+  website_url?: string;
+};
+
+export async function getPortfolioSettingsFromFirestore(): Promise<PortfolioSettings | null> {
+  try {
+    const settingsRef = doc(db, COLLECTIONS.SETTINGS, 'main');
+    const snap = await getDoc(settingsRef);
+    if (snap.exists()) {
+      return snap.data() as PortfolioSettings;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting portfolio settings:', error);
+    return null;
+  }
+}
+
+export async function updatePortfolioSettingsInFirestore(data: Partial<PortfolioSettings>) {
+  try {
+    const settingsRef = doc(db, COLLECTIONS.SETTINGS, 'main');
+    await setDoc(settingsRef, { ...data, updated_at: new Date().toISOString() }, { merge: true });
+  } catch (error) {
+    console.error('Error updating portfolio settings:', error);
+    throw error;
+  }
+}
+
+// Sections
+export type PortfolioSection = {
+  id: string;
+  title: string;
+  content: string;
+  is_visible: boolean;
+  key: string;
+  order_index: number;
+};
+
+export async function getSectionsFromFirestore(): Promise<PortfolioSection[]> {
+  try {
+    const q = query(collection(db, COLLECTIONS.SECTIONS));
+    const snap = await getDocs(q);
+    const items: PortfolioSection[] = [];
+    snap.forEach((docSnap) => {
+      items.push({ ...(docSnap.data() as Omit<PortfolioSection, 'id'>), id: docSnap.id });
+    });
+    // sort by order_index asc
+    items.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    return items;
+  } catch (error) {
+    console.error('Error getting sections:', error);
+    return [];
+  }
+}
+
+export async function addSectionToFirestore(data: Omit<PortfolioSection, 'id'>): Promise<PortfolioSection> {
+  try {
+    const docRef = await addDoc(collection(db, COLLECTIONS.SECTIONS), data);
+    return { id: docRef.id, ...data };
+  } catch (error) {
+    console.error('Error adding section:', error);
+    throw error;
+  }
+}
+
+export async function updateSectionInFirestore(id: string, data: Partial<PortfolioSection>) {
+  try {
+    const refDoc = doc(db, COLLECTIONS.SECTIONS, id);
+    await updateDoc(refDoc, data);
+  } catch (error) {
+    console.error('Error updating section:', error);
+    throw error;
+  }
+}
+
+export async function deleteSectionFromFirestore(id: string) {
+  try {
+    const refDoc = doc(db, COLLECTIONS.SECTIONS, id);
+    await deleteDoc(refDoc);
+  } catch (error) {
+    console.error('Error deleting section:', error);
     throw error;
   }
 }

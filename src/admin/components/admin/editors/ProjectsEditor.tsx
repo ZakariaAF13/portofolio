@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '../../../lib/supabase';
-import { Project } from '../../../types';
+import type { Project } from '../../../types';
 import { FileUpload } from '../FileUpload';
-import { AIAssistant } from '../AIAssistant';
-import { Plus, Save, Trash2, Star, StarOff, ExternalLink, Github, Sparkles } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Plus, Save, Trash2, Star } from 'lucide-react';
+import { useFirebaseData } from '../../../../context/FirebaseDataContext';
 
 const projectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -22,11 +20,12 @@ const projectSchema = z.object({
 type ProjectFormData = z.infer<typeof projectSchema>;
 
 export const ProjectsEditor: React.FC = () => {
+  const { projects: fbProjects, addProject, updateProject, deleteProject: deleteProjectCtx } = useFirebaseData();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showAI, setShowAI] = useState(false);
   const [techInput, setTechInput] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -43,52 +42,47 @@ export const ProjectsEditor: React.FC = () => {
     },
   });
 
-  const watchedDescription = watch('description');
   const watchedTechnologies = watch('technologies');
 
   useEffect(() => {
-    loadProjects();
-  }, []);
-
-  const loadProjects = async () => {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('order_index');
-
-    if (data) {
-      setProjects(data);
-    }
-  };
+    setProjects(fbProjects);
+  }, [fbProjects]);
 
   const onSubmit = async (data: ProjectFormData) => {
     setLoading(true);
     try {
       if (selectedProject) {
-        const { error } = await supabase
-          .from('projects')
-          .update(data)
-          .eq('id', selectedProject.id);
-
-        if (error) throw error;
-        toast.success('Project updated successfully');
+        // Map schema to Firebase Project shape
+        const payload: Partial<Project> = {
+          title: data.title,
+          description: data.description,
+          imageUrl: data.image_url || undefined,
+          liveUrl: (data as any).demo_url || undefined,
+          githubUrl: (data as any).github_url || undefined,
+          technologies: data.technologies,
+        };
+        await updateProject(selectedProject.id, payload);
+        setMessage('Project updated successfully');
       } else {
-        const { error } = await supabase
-          .from('projects')
-          .insert({
-            ...data,
-            order_index: projects.length,
-          });
-
-        if (error) throw error;
-        toast.success('Project created successfully');
+        const newProject: Omit<Project, 'id'> = {
+          title: data.title,
+          description: data.description,
+          imageUrl: data.image_url || undefined,
+          liveUrl: (data as any).demo_url || undefined,
+          githubUrl: (data as any).github_url || undefined,
+          technologies: data.technologies,
+          category: 'General',
+          status: 'Published',
+          createdAt: new Date().toISOString().split('T')[0],
+        } as Omit<Project, 'id'>;
+        await addProject(newProject);
+        setMessage('Project created successfully');
       }
-
-      await loadProjects();
+      // projects state will refresh from context listener
       setSelectedProject(null);
       reset();
     } catch (error) {
-      toast.error('Failed to save project');
+      setMessage('Failed to save project');
     } finally {
       setLoading(false);
     }
@@ -98,52 +92,45 @@ export const ProjectsEditor: React.FC = () => {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
     try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Project deleted successfully');
-      await loadProjects();
+      await deleteProjectCtx(id);
+      setMessage('Project deleted successfully');
       setSelectedProject(null);
       reset();
     } catch (error) {
-      toast.error('Failed to delete project');
+      setMessage('Failed to delete project');
     }
   };
 
   const selectProject = (project: Project) => {
     setSelectedProject(project);
     setValue('title', project.title);
-    setValue('description', project.description);
-    setValue('image_url', project.image_url || '');
-    setValue('demo_url', project.demo_url || '');
-    setValue('github_url', project.github_url || '');
-    setValue('technologies', project.technologies);
-    setValue('is_featured', project.is_featured);
+    setValue('description', project.description || '');
+    // Map Firebase fields back to form fields
+    setValue('image_url', (project as any).image_url || project.imageUrl || '');
+    setValue('demo_url', (project as any).demo_url || (project as any).liveUrl || '');
+    setValue('github_url', (project as any).github_url || project.githubUrl || '');
+    setValue('technologies', project.technologies || []);
+    setValue('is_featured', (project as any).is_featured || false);
   };
 
-  const addTechnology = (e: React.KeyboardEvent) => {
+  const addTechnology = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && techInput.trim()) {
       e.preventDefault();
-      const currentTechs = watchedTechnologies || [];
-      if (!currentTechs.includes(techInput.trim())) {
-        setValue('technologies', [...currentTechs, techInput.trim()]);
+      const currentTechs: string[] = (watchedTechnologies as string[]) || [];
+      const value = techInput.trim();
+      if (!currentTechs.includes(value)) {
+        setValue('technologies', [...currentTechs, value]);
         setTechInput('');
       }
     }
   };
 
   const removeTechnology = (tech: string) => {
-    const currentTechs = watchedTechnologies || [];
-    setValue('technologies', currentTechs.filter(t => t !== tech));
+    const currentTechs: string[] = (watchedTechnologies as string[]) || [];
+    setValue('technologies', currentTechs.filter((t: string) => t !== tech));
   };
 
-  const handleAISuggestion = (field: string, suggestion: string) => {
-    setValue('description', suggestion);
-    toast.success('AI suggestion applied');
-  };
+  // AI Assistant removed
 
   return (
     <div className="space-y-8">
@@ -153,13 +140,6 @@ export const ProjectsEditor: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage your portfolio projects and showcase work</p>
         </div>
         <div className="flex space-x-3">
-          <button
-            onClick={() => setShowAI(!showAI)}
-            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>AI Assistant</span>
-          </button>
           <button
             onClick={() => {
               setSelectedProject(null);
@@ -191,7 +171,7 @@ export const ProjectsEditor: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-gray-900">{project.title}</h3>
                     <div className="flex items-center space-x-2">
-                      {project.is_featured && <Star className="h-4 w-4 text-yellow-500 fill-current" />}
+                      {(project as any).is_featured && <Star className="h-4 w-4 text-yellow-500 fill-current" />}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -204,10 +184,10 @@ export const ProjectsEditor: React.FC = () => {
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 truncate">
-                    {project.description.substring(0, 60)}...
+                    {(project.description || '').substring(0, 60)}...
                   </p>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {project.technologies.slice(0, 3).map((tech) => (
+                    {(project.technologies || []).slice(0, 3).map((tech: string) => (
                       <span
                         key={tech}
                         className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
@@ -215,9 +195,9 @@ export const ProjectsEditor: React.FC = () => {
                         {tech}
                       </span>
                     ))}
-                    {project.technologies.length > 3 && (
+                    {(project.technologies || []).length > 3 && (
                       <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                        +{project.technologies.length - 3}
+                        +{(project.technologies || []).length - 3}
                       </span>
                     )}
                   </div>
@@ -232,6 +212,9 @@ export const ProjectsEditor: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
               {selectedProject ? 'Edit Project' : 'Create New Project'}
             </h2>
+            {message && (
+              <div className="mb-4 text-sm text-gray-700">{message}</div>
+            )}
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -354,15 +337,7 @@ export const ProjectsEditor: React.FC = () => {
             </form>
           </div>
 
-          {showAI && watchedDescription && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">AI Assistant</h2>
-              <AIAssistant
-                content={{ description: watchedDescription }}
-                onSuggestion={handleAISuggestion}
-              />
-            </div>
-          )}
+          {/* AI Assistant removed */}
         </div>
       </div>
     </div>

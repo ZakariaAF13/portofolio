@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
@@ -16,7 +16,6 @@ interface ContactInfo {
   email: string;
   phone: string;
   address: string;
-  contactTitle: string;
   contactMessage: string;
 }
 
@@ -25,21 +24,18 @@ export default function ContactPage() {
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [contactInfo, setContactInfo] = useState<ContactInfo>({
-    email: profile.email || '',
-    phone: profile.phone || '',
-    address: profile.address || '',
-    contactTitle: profile.contactTitle || 'Get In Touch',
-    contactMessage: profile.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+    address: profile?.address || '',
+    contactMessage: profile?.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
   });
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateProfile({
-        ...profile,
-        ...contactInfo
-      });
+      // Save only contactInfo fields (profile may be null initially)
+      await updateProfile({ ...contactInfo });
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating contact info:', error);
@@ -50,14 +46,25 @@ export default function ContactPage() {
 
   const handleCancel = () => {
     setContactInfo({
-      email: profile.email || '',
-      phone: profile.phone || '',
-      address: profile.address || '',
-      contactTitle: profile.contactTitle || 'Get In Touch',
-      contactMessage: profile.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
+      email: profile?.email || '',
+      phone: profile?.phone || '',
+      address: profile?.address || '',
+      contactMessage: profile?.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
     });
     setIsEditing(false);
   };
+
+  // Keep contactInfo in sync if profile loads/changes later
+  // (profile can be null initially)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setContactInfo({
+      email: profile?.email || '',
+      phone: profile?.phone || '',
+      address: profile?.address || '',
+      contactMessage: profile?.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
+    });
+  }, [profile?.email, profile?.phone, profile?.address, profile?.contactMessage]);
 
   const contactFields = [
     {
@@ -72,7 +79,7 @@ export default function ContactPage() {
       label: 'Phone Number',
       icon: FiPhone,
       type: 'tel',
-      placeholder: '+1 (555) 123-4567'
+      placeholder: '+62852-1955-0092'
     },
     {
       key: 'address' as keyof ContactInfo,
@@ -80,13 +87,6 @@ export default function ContactPage() {
       icon: FiMapPin,
       type: 'text',
       placeholder: 'City, Country'
-    },
-    {
-      key: 'contactTitle' as keyof ContactInfo,
-      label: 'Contact Section Title',
-      icon: FiMessageSquare,
-      type: 'text',
-      placeholder: 'Get In Touch'
     },
     {
       key: 'contactMessage' as keyof ContactInfo,

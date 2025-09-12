@@ -22,6 +22,7 @@ export default function ProjectsPage() {
     technologies: '',
     imageUrl: '',
     tiktokUrl: '',
+    liveUrl: '',
   });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +59,7 @@ export default function ProjectsPage() {
         technologies: project.technologies?.join(', ') || '',
         imageUrl: project.imageUrl || '',
         tiktokUrl: project.tiktokUrl || '',
+        liveUrl: project.liveUrl || '',
       });
       setPreviewImage(project.imageUrl || null);
     } else {
@@ -71,6 +73,7 @@ export default function ProjectsPage() {
         technologies: '',
         imageUrl: '',
         tiktokUrl: '',
+        liveUrl: '',
       });
       setPreviewImage(null);
     }
@@ -89,6 +92,7 @@ export default function ProjectsPage() {
       technologies: '',
       imageUrl: '',
       tiktokUrl: '',
+      liveUrl: '',
     });
     setPreviewImage(null);
   };
@@ -131,6 +135,7 @@ export default function ProjectsPage() {
           technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
           imageUrl: formData.imageUrl,
           tiktokUrl: formData.tiktokUrl,
+          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
         });
         showSuccessModal('Project Updated!', `"${formData.title}" has been updated successfully.`);
       } else {
@@ -142,6 +147,7 @@ export default function ProjectsPage() {
           technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
           imageUrl: formData.imageUrl,
           tiktokUrl: formData.tiktokUrl,
+          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
           createdAt: new Date().toISOString().split('T')[0],
         });
         showSuccessModal('Project Added!', `"${formData.title}" has been added successfully.`);
@@ -418,6 +424,25 @@ export default function ProjectsPage() {
                         placeholder="React, Node.js, MongoDB (comma separated)"
                       />
                     </div>
+
+                    {formData.category !== 'TikTok' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Project URL (Live)
+                          </label>
+                          <input
+                            type="url"
+                            value={formData.liveUrl}
+                            onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                            placeholder="https://your-live-site.com"
+                          />
+                        </div>
+
+
+                      </>
+                    )}
 
                     {formData.category === 'TikTok' && (
                       <div>

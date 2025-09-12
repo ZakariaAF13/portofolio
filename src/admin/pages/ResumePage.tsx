@@ -795,7 +795,7 @@ export default function ResumePage() {
                         value={educationFormData.institution}
                         onChange={(e) => setEducationFormData({ ...educationFormData, institution: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                        placeholder="e.g., STMIK MARDIRA INDONESIA"
+                        placeholder="e.g., University"
                       />
                     </div>
                     <div>

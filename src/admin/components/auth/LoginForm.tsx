@@ -1,28 +1,32 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useFirebaseAuth } from '../../../context/FirebaseAuthContext';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 export const LoginForm: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn } = useFirebaseAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
 
     setLoading(true);
     try {
-      await signIn(email, password);
-      toast.success('Logged in successfully');
-    } catch (error) {
-      toast.error('Invalid credentials');
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError(error.message || 'Invalid credentials');
+      } else {
+        setError(null);
+      }
+    } catch (err) {
+      setError('Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -41,6 +45,9 @@ export const LoginForm: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error}</div>
+            )}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address

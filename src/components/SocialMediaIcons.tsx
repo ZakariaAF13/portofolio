@@ -185,6 +185,23 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
         }
 
         if (variant === 'brandHover') {
+          const [isHovered, setIsHovered] = React.useState(false);
+          const colors = getColorClasses(link.name);
+          const getBrandColor = (baseTextClass: string) => {
+            if (baseTextClass.includes('blue')) return '#2563eb';
+            if (baseTextClass.includes('green')) return '#16a34a';
+            if (baseTextClass.includes('pink')) return '#db2777';
+            if (baseTextClass.includes('red')) return '#dc2626';
+            if (baseTextClass.includes('sky')) return '#0088cc'; 
+            if (baseTextClass.includes('indigo')) return '#4f46e5';
+            if (baseTextClass.includes('purple')) return '#9333ea';
+            if (baseTextClass.includes('orange')) return '#ea580c';
+            if (baseTextClass.includes('emerald')) return '#059669';
+            if (baseTextClass.includes('gray')) return '#4b5563';
+            return '#2563eb'; 
+          };
+          
+          const brandColor = getBrandColor(colors.baseText);
           return (
             <a
               key={link.name}
@@ -192,10 +209,18 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
               target={getTarget(link)}
               rel="noopener noreferrer"
               onClick={getOnClick(link)}
-              className={`p-2 rounded-lg ${link.baseText} ${link.hoverSolidBg} hover:text-white transition-all duration-200 transform hover:scale-105`}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className={`group p-2 rounded-lg transition-all duration-200 transform hover:scale-105`}
+              style={{ 
+                backgroundColor: isHovered 
+                  ? brandColor
+                  : theme === 'dark' ? '#334155' : '#f3f4f6'
+              }}
               title={link.name}
             >
-              <Icon className={iconSize} />
+              <Icon className={`${iconSize} transition-colors duration-200`} 
+                    style={{ color: isHovered ? '#ffffff' : brandColor }} />
             </a>
           );
         }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { Image as ImageIcon, Trash2, Download, ExternalLink, Upload } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Image as ImageIcon, Trash2, ExternalLink, Upload } from 'lucide-react';
+import { getStorage, ref, listAll, getDownloadURL, uploadBytes, deleteObject, getMetadata } from 'firebase/storage';
+import { app } from '../../../config/firebase';
 
 interface MediaFile {
   name: string;
@@ -14,6 +14,7 @@ export const MediaManager: React.FC = () => {
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadFiles();
@@ -21,25 +22,26 @@ export const MediaManager: React.FC = () => {
 
   const loadFiles = async () => {
     try {
-      const { data, error } = await supabase.storage
-        .from('portfolio-assets')
-        .list('images/', {
-          limit: 100,
-          sortBy: { column: 'created_at', order: 'desc' },
-        });
-
-      if (error) throw error;
-
-      const filesWithUrls = data.map(file => ({
-        name: file.name,
-        url: supabase.storage.from('portfolio-assets').getPublicUrl(`images/${file.name}`).data.publicUrl,
-        size: file.metadata?.size || 0,
-        created_at: file.created_at || '',
-      }));
-
-      setFiles(filesWithUrls);
+      const storage = getStorage(app);
+      const imagesRef = ref(storage, 'images');
+      const list = await listAll(imagesRef);
+      const items = await Promise.all(
+        list.items.map(async (itemRef) => {
+          const [url, meta] = await Promise.all([getDownloadURL(itemRef), getMetadata(itemRef)]);
+          return {
+            name: itemRef.name,
+            url,
+            size: meta.size || 0,
+            created_at: meta.timeCreated || '',
+          } as MediaFile;
+        })
+      );
+      // sort by created_at desc if available
+      items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      setFiles(items);
+      setMessage(null);
     } catch (error) {
-      toast.error('Failed to load media files');
+      setMessage('Failed to load media files');
     } finally {
       setLoading(false);
     }
@@ -56,20 +58,13 @@ export const MediaManager: React.FC = () => {
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `images/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('portfolio-assets')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      toast.success('File uploaded successfully');
+      const storage = getStorage(app);
+      const storageRef = ref(storage, `images/${fileName}`);
+      await uploadBytes(storageRef, file);
+      setMessage('File uploaded successfully');
       await loadFiles();
     } catch (error) {
-      toast.error('Error uploading file');
+      setMessage('Error uploading file');
     } finally {
       setUploading(false);
     }
@@ -79,22 +74,19 @@ export const MediaManager: React.FC = () => {
     if (!confirm('Are you sure you want to delete this file?')) return;
 
     try {
-      const { error } = await supabase.storage
-        .from('portfolio-assets')
-        .remove([`images/${fileName}`]);
-
-      if (error) throw error;
-
-      toast.success('File deleted successfully');
+      const storage = getStorage(app);
+      const fileRef = ref(storage, `images/${fileName}`);
+      await deleteObject(fileRef);
+      setMessage('File deleted successfully');
       await loadFiles();
     } catch (error) {
-      toast.error('Failed to delete file');
+      setMessage('Failed to delete file');
     }
   };
 
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
-    toast.success('URL copied to clipboard');
+    setMessage('URL copied to clipboard');
   };
 
   const formatFileSize = (bytes: number) => {
@@ -134,6 +126,9 @@ export const MediaManager: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6">
+        {message && (
+          <div className="mb-4 text-sm text-gray-700">{message}</div>
+        )}
         {files.length === 0 ? (
           <div className="text-center py-12">
             <ImageIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />

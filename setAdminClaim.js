@@ -8,9 +8,26 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-// Ganti dengan UID user yang akan dijadikan admin
-// Dapatkan UID dari Firebase Console → Authentication → Users
-const uid = 'USER_UID_DARI_CONSOLE'; // GANTI DENGAN UID YANG SEBENARNYA
+// Auto-generate: Get first user from Firebase Auth and make them admin
+async function getFirstUserAndSetAdmin() {
+  try {
+    const listUsers = await admin.auth().listUsers(1);
+    if (listUsers.users.length === 0) {
+      console.log('❌ No users found in Firebase Authentication');
+      console.log('💡 Create a user first by signing up through your app');
+      process.exit(1);
+    }
+    
+    const user = listUsers.users[0];
+    console.log('🔍 Found user:', user.email || user.uid);
+    return user.uid;
+  } catch (error) {
+    console.error('❌ Error listing users:', error);
+    process.exit(1);
+  }
+}
+
+const uid = await getFirstUserAndSetAdmin();
 
 console.log('Setting admin claim for user:', uid);
 

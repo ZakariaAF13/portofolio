@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '../../../lib/supabase';
-import { Section } from '../../../types';
-import { AIAssistant } from '../AIAssistant';
-import { Plus, Save, Trash2, Eye, EyeOff, Sparkles } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Plus, Save, Trash2, Eye, EyeOff } from 'lucide-react';
+import { 
+  getSectionsFromFirestore, 
+  addSectionToFirestore, 
+  updateSectionInFirestore, 
+  deleteSectionFromFirestore, 
+  type PortfolioSection 
+} from '../../../../utils/portfolioFirestore';
 
 const sectionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -17,70 +20,57 @@ const sectionSchema = z.object({
 type SectionFormData = z.infer<typeof sectionSchema>;
 
 export const SectionEditor: React.FC = () => {
-  const [sections, setSections] = useState<Section[]>([]);
-  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
+  const [sections, setSections] = useState<PortfolioSection[]>([]);
+  const [selectedSection, setSelectedSection] = useState<PortfolioSection | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showAI, setShowAI] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
-    watch,
+    // watch,
     reset,
     formState: { errors },
   } = useForm<SectionFormData>({
     resolver: zodResolver(sectionSchema),
   });
 
-  const watchedContent = watch('content');
+  // const watchedContent = watch('content');
 
   useEffect(() => {
     loadSections();
   }, []);
 
   const loadSections = async () => {
-    const { data, error } = await supabase
-      .from('sections')
-      .select('*')
-      .order('order_index');
-
-    if (data) {
-      setSections(data);
-    }
+    const list = await getSectionsFromFirestore();
+    // Already in PortfolioSection shape
+    setSections(list);
   };
 
   const onSubmit = async (data: SectionFormData) => {
     setLoading(true);
     try {
       if (selectedSection) {
-        // Update existing section
-        const { error } = await supabase
-          .from('sections')
-          .update(data)
-          .eq('id', selectedSection.id);
-
-        if (error) throw error;
-        toast.success('Section updated successfully');
+        await updateSectionInFirestore(selectedSection.id, data);
+        setMessage('Section updated successfully');
       } else {
-        // Create new section
-        const { error } = await supabase
-          .from('sections')
-          .insert({
-            ...data,
-            key: data.title.toLowerCase().replace(/\s+/g, '_'),
-            order_index: sections.length,
-          });
-
-        if (error) throw error;
-        toast.success('Section created successfully');
+        const newData: Omit<PortfolioSection, 'id'> = {
+          title: data.title,
+          content: data.content,
+          is_visible: data.is_visible,
+          key: data.title.toLowerCase().replace(/\s+/g, '_'),
+          order_index: sections.length,
+        };
+        await addSectionToFirestore(newData);
+        setMessage('Section created successfully');
       }
 
       await loadSections();
       setSelectedSection(null);
       reset();
     } catch (error) {
-      toast.error('Failed to save section');
+      setMessage('Failed to save section');
     } finally {
       setLoading(false);
     }
@@ -90,32 +80,24 @@ export const SectionEditor: React.FC = () => {
     if (!confirm('Are you sure you want to delete this section?')) return;
 
     try {
-      const { error } = await supabase
-        .from('sections')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Section deleted successfully');
+      await deleteSectionFromFirestore(id);
+      setMessage('Section deleted successfully');
       await loadSections();
       setSelectedSection(null);
       reset();
     } catch (error) {
-      toast.error('Failed to delete section');
+      setMessage('Failed to delete section');
     }
   };
 
-  const selectSection = (section: Section) => {
+  const selectSection = (section: PortfolioSection) => {
     setSelectedSection(section);
     setValue('title', section.title);
     setValue('content', section.content);
     setValue('is_visible', section.is_visible);
   };
 
-  const handleAISuggestion = (field: string, suggestion: string) => {
-    setValue('content', suggestion);
-    toast.success('AI suggestion applied');
-  };
+  // AI Assistant removed
 
   return (
     <div className="space-y-8">
@@ -125,13 +107,6 @@ export const SectionEditor: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage About, Services, and other content sections</p>
         </div>
         <div className="flex space-x-3">
-          <button
-            onClick={() => setShowAI(!showAI)}
-            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>AI Assistant</span>
-          </button>
           <button
             onClick={() => {
               setSelectedSection(null);
@@ -193,6 +168,9 @@ export const SectionEditor: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
               {selectedSection ? 'Edit Section' : 'Create New Section'}
             </h2>
+            {message && (
+              <div className="mb-4 text-sm text-gray-700">{message}</div>
+            )}
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
@@ -246,15 +224,7 @@ export const SectionEditor: React.FC = () => {
             </form>
           </div>
 
-          {showAI && watchedContent && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">AI Assistant</h2>
-              <AIAssistant
-                content={{ content: watchedContent }}
-                onSuggestion={handleAISuggestion}
-              />
-            </div>
-          )}
+          {/* AI Assistant removed */}
         </div>
       </div>
     </div>

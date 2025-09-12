@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '../../../lib/supabase';
 import { FileUpload } from '../FileUpload';
 import { Search, Save, Eye } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { getPortfolioSettingsFromFirestore, updatePortfolioSettingsInFirestore } from '../../../../utils/portfolioFirestore';
 
 const seoSchema = z.object({
   meta_title: z.string().min(1, 'Meta title is required').max(60, 'Title should be under 60 characters'),
@@ -17,6 +16,7 @@ type SEOFormData = z.infer<typeof seoSchema>;
 
 export const SEOEditor: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -34,11 +34,7 @@ export const SEOEditor: React.FC = () => {
 
   useEffect(() => {
     const loadSEOSettings = async () => {
-      const { data, error } = await supabase
-        .from('portfolio_settings')
-        .select('meta_title, meta_description, og_image_url')
-        .single();
-
+      const data = await getPortfolioSettingsFromFirestore();
       if (data) {
         setValue('meta_title', data.meta_title || '');
         setValue('meta_description', data.meta_description || '');
@@ -52,17 +48,13 @@ export const SEOEditor: React.FC = () => {
   const onSubmit = async (data: SEOFormData) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('portfolio_settings')
-        .upsert(data);
-
-      if (error) throw error;
-      toast.success('SEO settings updated successfully');
+      await updatePortfolioSettingsInFirestore(data);
+      setMessage('SEO settings updated successfully');
       
       // Update document meta tags immediately
       updateMetaTags(data);
     } catch (error) {
-      toast.error('Failed to update SEO settings');
+      setMessage('Failed to update SEO settings');
     } finally {
       setLoading(false);
     }

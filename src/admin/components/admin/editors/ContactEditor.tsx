@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '../../../lib/supabase';
 import { ContactInfo } from '../../../types';
 import { Save, Mail, Phone, MapPin, Linkedin, Github, Twitter, Globe } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { getPortfolioSettingsFromFirestore, updatePortfolioSettingsInFirestore } from '../../../../utils/portfolioFirestore';
 
 const contactSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,6 +20,7 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export const ContactEditor: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -34,13 +34,9 @@ export const ContactEditor: React.FC = () => {
 
   useEffect(() => {
     const loadContactInfo = async () => {
-      const { data, error } = await supabase
-        .from('contact_info')
-        .select('*')
-        .single();
-
+      const data = await getPortfolioSettingsFromFirestore();
       if (data) {
-        setValue('email', data.email);
+        setValue('email', data.email || '');
         setValue('phone', data.phone || '');
         setValue('location', data.location || '');
         setValue('linkedin_url', data.linkedin_url || '');
@@ -56,14 +52,10 @@ export const ContactEditor: React.FC = () => {
   const onSubmit = async (data: ContactFormData) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('contact_info')
-        .upsert(data);
-
-      if (error) throw error;
-      toast.success('Contact information updated successfully');
+      await updatePortfolioSettingsInFirestore(data);
+      setMessage('Contact information updated successfully');
     } catch (error) {
-      toast.error('Failed to update contact information');
+      setMessage('Failed to update contact information');
     } finally {
       setLoading(false);
     }
@@ -79,6 +71,9 @@ export const ContactEditor: React.FC = () => {
       <div className="max-w-2xl">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Contact Details</h2>
+          {message && (
+            <div className="mb-4 text-sm text-gray-700">{message}</div>
+          )}
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

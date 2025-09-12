@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useFirebaseAuth } from '../../../context/FirebaseAuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
@@ -18,7 +18,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useFirebaseAuth();
   const navigate = useNavigate();
 
   const navigation = [

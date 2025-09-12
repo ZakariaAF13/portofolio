@@ -6,10 +6,10 @@ import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Profile, SocialMediaField } from '../types';
 import IconPicker, { socialMediaIcons, type IconOption } from '../components/IconPicker';
 import SuccessModal from '../components/SuccessModal';
-
+import { ImageCropper } from '../components/ImageCropper';
 
 export default function ProfilePage() {
-  const { profile, updateProfile } = useFirebaseData();
+  const { profile, updateProfile, refreshData } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Profile | null>(profile);
@@ -21,6 +21,10 @@ export default function ProfilePage() {
   );
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  
+  // Image cropper states
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
 
   // Success modal state
   const [successModal, setSuccessModal] = useState({
@@ -110,21 +114,40 @@ export default function ProfilePage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string;
-        setPreviewImage(imageUrl);
-        setFormData(prev => prev ? { ...prev, imageUrl } : null);
+        setOriginalImageSrc(imageUrl);
+        setShowImageCropper(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedImageUrl: string) => {
+    setPreviewImage(croppedImageUrl);
+    setFormData(prev => prev ? { ...prev, imageUrl: croppedImageUrl } : null);
+    setShowImageCropper(false);
+    setOriginalImageSrc(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowImageCropper(false);
+    setOriginalImageSrc(null);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     
     try {
+      // If we have a cropped preview (data URL), store it directly to Firestore
+      // Note: ImageCropper outputs a compressed 240x240 JPEG data URL to keep doc size under 1MB
+      const imageUrlToSave = previewImage || formData?.imageUrl || '';
+
       await updateProfile({
         ...formData,
+        imageUrl: imageUrlToSave,
         socialMediaFields: socialMediaFields
       });
+      // Ensure latest data reflected (in case other listeners rely on Firestore data)
+      await refreshData();
       setPreviewImage(null);
       setIsEditing(false);
       showSuccessModal('Profile Updated!', 'Your profile has been updated successfully.');
@@ -214,7 +237,7 @@ export default function ProfilePage() {
               <motion.form 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                onSubmit={handleSave} 
+                onSubmit={(e) => { e.preventDefault(); handleSave(); }} 
                 className="space-y-6"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -602,6 +625,15 @@ export default function ProfilePage() {
         </div>
       </div>
       
+      {/* Image Cropper Modal */}
+      {showImageCropper && originalImageSrc && (
+        <ImageCropper
+          imageSrc={originalImageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* Icon Picker Modal */}
       {showIconPicker && (
         <IconPicker

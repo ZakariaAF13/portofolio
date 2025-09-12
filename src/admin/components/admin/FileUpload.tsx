@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { app } from '../../../config/firebase';
 
 interface FileUploadProps {
   onUpload: (url: string) => void;
@@ -15,6 +15,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   type,
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const uploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -27,24 +28,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
       const fileName = `${type}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `images/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('portfolio-assets')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage
-        .from('portfolio-assets')
-        .getPublicUrl(filePath);
-
-      onUpload(data.publicUrl);
-      toast.success('Image uploaded successfully');
+      const storage = getStorage(app);
+      const storageRef = ref(storage, `images/${fileName}`);
+      await uploadBytes(storageRef, file);
+      const publicUrl = await getDownloadURL(storageRef);
+      onUpload(publicUrl);
+      setMessage('Image uploaded successfully');
     } catch (error) {
-      toast.error('Error uploading file');
+      setMessage('Error uploading file');
     } finally {
       setUploading(false);
     }
@@ -52,7 +43,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
   const removeImage = () => {
     onUpload('');
-    toast.success('Image removed');
+    setMessage('Image removed');
   };
 
   return (
@@ -102,6 +93,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           </span>
         </label>
       </div>
+      {message && (
+        <div className="text-sm text-gray-600">{message}</div>
+      )}
     </div>
   );
 };

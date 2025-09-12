@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '../../../lib/supabase';
 import { FileUpload } from '../FileUpload';
 import { AIAssistant } from '../AIAssistant';
 import { Sparkles, Save } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { getPortfolioSettingsFromFirestore, updatePortfolioSettingsInFirestore } from '../../../../utils/portfolioFirestore';
 
 const heroSchema = z.object({
   hero_title: z.string().min(1, 'Title is required'),
@@ -20,6 +19,7 @@ type HeroFormData = z.infer<typeof heroSchema>;
 export const HeroEditor: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   
   const {
     register,
@@ -36,11 +36,7 @@ export const HeroEditor: React.FC = () => {
 
   useEffect(() => {
     const loadSettings = async () => {
-      const { data, error } = await supabase
-        .from('portfolio_settings')
-        .select('*')
-        .single();
-
+      const data = await getPortfolioSettingsFromFirestore();
       if (data) {
         setValue('hero_title', data.hero_title);
         setValue('hero_subtitle', data.hero_subtitle);
@@ -55,14 +51,10 @@ export const HeroEditor: React.FC = () => {
   const onSubmit = async (data: HeroFormData) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('portfolio_settings')
-        .upsert(data);
-
-      if (error) throw error;
-      toast.success('Hero section updated successfully');
+      await updatePortfolioSettingsInFirestore(data);
+      setMessage('Hero section updated successfully');
     } catch (error) {
-      toast.error('Failed to update hero section');
+      setMessage('Failed to update hero section');
     } finally {
       setLoading(false);
     }
@@ -70,7 +62,7 @@ export const HeroEditor: React.FC = () => {
 
   const handleAISuggestion = (field: string, suggestion: string) => {
     setValue(field as keyof HeroFormData, suggestion);
-    toast.success('AI suggestion applied');
+    setMessage('AI suggestion applied');
   };
 
   return (
@@ -93,6 +85,9 @@ export const HeroEditor: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Content Settings</h2>
+            {message && (
+              <div className="mb-4 text-sm text-gray-700">{message}</div>
+            )}
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>

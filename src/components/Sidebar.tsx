@@ -52,7 +52,7 @@ export default function Sidebar() {
   const cardClass = theme === 'dark' ? 'bg-slate-800' : 'bg-white';
   const textClass = theme === 'dark' ? 'text-white' : 'text-gray-800';
   const subtitleClass = theme === 'dark' ? 'text-gray-400' : 'text-gray-500';
-  const innerCardClass = theme === 'dark' ? 'bg-slate-900/70' : 'bg-gray-50';
+  const innerCardClass = theme === 'dark' ? 'bg-slate-900/70' : 'bg-gray-100';
   const contactIconBgClass = theme === 'dark' ? 'bg-slate-800' : 'bg-white';
   
   return (
@@ -60,7 +60,7 @@ export default function Sidebar() {
       <div className="absolute top-5 right-5 z-10">
         <button
           onClick={toggleTheme}
-          className="mt-6 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+          className="mt-6 p-2 rounded-full hover:bg-gray-500 dark:hover:bg-slate-700 transition-colors"
           aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
           {theme === 'dark' ? (
@@ -85,11 +85,13 @@ export default function Sidebar() {
       </span>
       
       <div className="mb-6">
-        <SocialMediaIcons 
-          variant="brandHover"
-          iconSize="w-5 h-5"
-          className="justify-center"
-        />
+        <div className="bg-transparent p-1 rounded-lg">
+          <SocialMediaIcons 
+            variant="brandHover"
+            iconSize="w-5 h-5"
+            className="justify-center"
+          />
+        </div>
       </div>
 
       <div className={`w-full p-5 rounded-2xl ${innerCardClass}`}>

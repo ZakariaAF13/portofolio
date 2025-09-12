@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { PortfolioSettings, Section, Project, ContactInfo } from '../../types';
 import { Github, ExternalLink, Mail, Phone, MapPin, Linkedin, Twitter, Globe, ArrowLeft } from 'lucide-react';
+import { 
+  getPortfolioSettingsFromFirestore, 
+  getSectionsFromFirestore, 
+  getProjectsFromFirestore,
+  type PortfolioSettings,
+  type PortfolioSection
+} from '../../../utils/portfolioFirestore';
+import type { Project } from '../../types';
 
 export const PortfolioPreview: React.FC = () => {
   const [settings, setSettings] = useState<PortfolioSettings | null>(null);
-  const [sections, setSections] = useState<Section[]>([]);
+  const [sections, setSections] = useState<PortfolioSection[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [contact, setContact] = useState<ContactInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,25 +22,24 @@ export const PortfolioPreview: React.FC = () => {
 
   const loadPortfolioData = async () => {
     try {
-      const [settingsData, sectionsData, projectsData, contactData] = await Promise.all([
-        supabase.from('portfolio_settings').select('*').single(),
-        supabase.from('sections').select('*').eq('is_visible', true).order('order_index'),
-        supabase.from('projects').select('*').order('order_index'),
-        supabase.from('contact_info').select('*').single(),
+      const [settingsDoc, sectionsList, projectsList] = await Promise.all([
+        getPortfolioSettingsFromFirestore(),
+        getSectionsFromFirestore(),
+        getProjectsFromFirestore(),
       ]);
 
-      if (settingsData.data) {
-        setSettings(settingsData.data);
+      if (settingsDoc) {
+        setSettings(settingsDoc);
         // Update meta tags
-        document.title = settingsData.data.meta_title;
-        updateMetaTag('description', settingsData.data.meta_description);
-        if (settingsData.data.og_image_url) {
-          updateMetaTag('og:image', settingsData.data.og_image_url);
+        if (settingsDoc.meta_title) document.title = settingsDoc.meta_title;
+        if (settingsDoc.meta_description) updateMetaTag('description', settingsDoc.meta_description);
+        if (settingsDoc.og_image_url) {
+          updateMetaTag('og:image', settingsDoc.og_image_url);
         }
       }
-      if (sectionsData.data) setSections(sectionsData.data);
-      if (projectsData.data) setProjects(projectsData.data);
-      if (contactData.data) setContact(contactData.data);
+      // only visible sections
+      setSections((sectionsList || []).filter(s => s.is_visible));
+      setProjects(projectsList || []);
     } catch (error) {
       console.error('Error loading portfolio data:', error);
     } finally {
@@ -65,8 +69,9 @@ export const PortfolioPreview: React.FC = () => {
     );
   }
 
-  const featuredProjects = projects.filter(p => p.is_featured);
-  const otherProjects = projects.filter(p => !p.is_featured);
+  // For Firebase Project type, we may not have is_featured. Treat all as other projects unless you add this field.
+  const featuredProjects: Project[] = (projects as any[]).filter((p) => p.is_featured);
+  const otherProjects: Project[] = projects.filter((p: any) => !p.is_featured);
 
   return (
     <div className="min-h-screen bg-white">
@@ -165,21 +170,21 @@ export const PortfolioPreview: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {featuredProjects.map((project) => (
                   <div key={project.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                    {project.image_url && (
+                    {(project as any).image_url || (project as any).imageUrl ? (
                       <div className="aspect-video overflow-hidden">
                         <img
-                          src={project.image_url}
+                          src={(project as any).image_url || (project as any).imageUrl}
                           alt={project.title}
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
                       </div>
-                    )}
+                    ) : null}
                     <div className="p-8">
                       <h3 className="text-2xl font-bold text-gray-900 mb-4">{project.title}</h3>
                       <p className="text-gray-600 mb-6 leading-relaxed">{project.description}</p>
                       
                       <div className="flex flex-wrap gap-2 mb-6">
-                        {project.technologies.map((tech) => (
+                        {(project.technologies || []).map((tech) => (
                           <span
                             key={tech}
                             className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
@@ -190,9 +195,9 @@ export const PortfolioPreview: React.FC = () => {
                       </div>
 
                       <div className="flex space-x-4">
-                        {project.demo_url && (
+                        {((project as any).demo_url || (project as any).liveUrl) && (
                           <a
-                            href={project.demo_url}
+                            href={(project as any).demo_url || (project as any).liveUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
@@ -201,9 +206,9 @@ export const PortfolioPreview: React.FC = () => {
                             <span>Live Demo</span>
                           </a>
                         )}
-                        {project.github_url && (
+                        {((project as any).github_url || (project as any).githubUrl) && (
                           <a
-                            href={project.github_url}
+                            href={(project as any).github_url || (project as any).githubUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center space-x-2 px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors duration-200"
@@ -241,7 +246,7 @@ export const PortfolioPreview: React.FC = () => {
                       <p className="text-gray-600 text-sm mb-4 line-clamp-3">{project.description}</p>
                       
                       <div className="flex flex-wrap gap-1 mb-4">
-                        {project.technologies.slice(0, 3).map((tech) => (
+                        {(project.technologies || []).slice(0, 3).map((tech) => (
                           <span
                             key={tech}
                             className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
@@ -249,17 +254,17 @@ export const PortfolioPreview: React.FC = () => {
                             {tech}
                           </span>
                         ))}
-                        {project.technologies.length > 3 && (
+                        {(project.technologies || []).length > 3 && (
                           <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                            +{project.technologies.length - 3}
+                            +{(project.technologies || []).length - 3}
                           </span>
                         )}
                       </div>
 
                       <div className="flex space-x-2">
-                        {project.demo_url && (
+                        {((project as any).demo_url || (project as any).liveUrl) && (
                           <a
-                            href={project.demo_url}
+                            href={(project as any).demo_url || (project as any).liveUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors duration-200"
@@ -268,9 +273,9 @@ export const PortfolioPreview: React.FC = () => {
                             <span>Demo</span>
                           </a>
                         )}
-                        {project.github_url && (
+                        {((project as any).github_url || (project as any).githubUrl) && (
                           <a
-                            href={project.github_url}
+                            href={(project as any).github_url || (project as any).githubUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm rounded transition-colors duration-200"
@@ -297,41 +302,41 @@ export const PortfolioPreview: React.FC = () => {
             Let's discuss your next project or collaboration opportunity
           </p>
 
-          {contact && (
+          {settings && (
             <div className="bg-white rounded-xl shadow-lg p-8 max-w-2xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {contact.email && (
+                {settings.email && (
                   <a
-                    href={`mailto:${contact.email}`}
+                    href={`mailto:${settings.email}`}
                     className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                   >
                     <Mail className="h-5 w-5 text-blue-600" />
-                    <span className="text-gray-900">{contact.email}</span>
+                    <span className="text-gray-900">{settings.email}</span>
                   </a>
                 )}
                 
-                {contact.phone && (
+                {settings.phone && (
                   <a
-                    href={`tel:${contact.phone}`}
+                    href={`tel:${settings.phone}`}
                     className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                   >
                     <Phone className="h-5 w-5 text-blue-600" />
-                    <span className="text-gray-900">{contact.phone}</span>
+                    <span className="text-gray-900">{settings.phone}</span>
                   </a>
                 )}
 
-                {contact.location && (
+                {settings.location && (
                   <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
                     <MapPin className="h-5 w-5 text-blue-600" />
-                    <span className="text-gray-900">{contact.location}</span>
+                    <span className="text-gray-900">{settings.location}</span>
                   </div>
                 )}
               </div>
 
               <div className="flex justify-center space-x-6">
-                {contact.linkedin_url && (
+                {settings.linkedin_url && (
                   <a
-                    href={contact.linkedin_url}
+                    href={settings.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors duration-200"
@@ -340,9 +345,9 @@ export const PortfolioPreview: React.FC = () => {
                   </a>
                 )}
                 
-                {contact.github_url && (
+                {settings.github_url && (
                   <a
-                    href={contact.github_url}
+                    href={settings.github_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors duration-200"
@@ -351,9 +356,9 @@ export const PortfolioPreview: React.FC = () => {
                   </a>
                 )}
 
-                {contact.twitter_url && (
+                {settings.twitter_url && (
                   <a
-                    href={contact.twitter_url}
+                    href={settings.twitter_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-400 rounded-full transition-colors duration-200"
@@ -362,9 +367,9 @@ export const PortfolioPreview: React.FC = () => {
                   </a>
                 )}
 
-                {contact.website_url && (
+                {settings.website_url && (
                   <a
-                    href={contact.website_url}
+                    href={settings.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 bg-green-100 hover:bg-green-200 text-green-600 rounded-full transition-colors duration-200"
@@ -381,9 +386,7 @@ export const PortfolioPreview: React.FC = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">
-            © 2025 {settings?.hero_title || 'Portfolio'}. Built with React and Supabase.
-          </p>
+          <p className="text-gray-400">© 2025 {settings?.hero_title || 'Portfolio'}. Built with React and Firebase.</p>
         </div>
       </footer>
     </div>

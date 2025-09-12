@@ -1,64 +1,143 @@
-// Firestore Security Rules - Copy paste ini ke Firebase Console → Firestore → Rules
+// Firestore & Storage Security Rules
+// Copy salah satu blok (DEV atau PROD) ke Firebase Console lalu klik Publish.
 
-// OPSI 1: Development Rules (Lebih Permisif)
+//////////////////////////////
+// DEV RULES (sementara)    //
+//////////////////////////////
+// Firestore Development Rules
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // Public read untuk koleksi konten
+    match /{collectionId}/{documentId} {
+      allow read: if collectionId in [
+        'portfolio_projects',
+        'portfolio_skills',
+        'portfolio_profile',
+        'portfolio_settings',
+        'portfolio_what_i_do',
+        'portfolio_knowledge',
+        'portfolio_experiences',
+        'portfolio_educations',
+        'portfolio_sections'
+      ];
+    }
+
+    // Tulis hanya jika login (DEV saja)
+    match /{collectionId}/{documentId} {
+      allow write: if request.auth != null && collectionId in [
+        'portfolio_projects',
+        'portfolio_skills',
+        'portfolio_profile',
+        'portfolio_settings',
+        'portfolio_what_i_do',
+        'portfolio_knowledge',
+        'portfolio_experiences',
+        'portfolio_educations',
+        'portfolio_sections'
+      ];
+    }
+
+    // Contact messages (opsional)
+    match /contact_messages/{document} {
+      allow create: if true; // siapa pun bisa kirim pesan
+      allow read, update, delete: if request.auth != null; // hanya user login (DEV)
     }
   }
 }
 
-// PRODUCTION RULES - Copy paste ini ke Firebase Console → Firestore → Rules
+// Storage Development Rules
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Baca publik untuk semua file (agar gambar tampil)
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+
+    // Tulis only authenticated (DEV)
+    match /images/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+  }
+}
+
+
+////////////////////////////////
+// PROD RULES (disarankan)    //
+////////////////////////////////
+// Firestore Production Rules
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Portfolio collections - public read, admin write
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
     match /portfolio_projects/{document} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
-    
     match /portfolio_skills/{document} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
-    
     match /portfolio_profile/{document} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
-    
+    match /portfolio_settings/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /portfolio_what_i_do/{document} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
-    
     match /portfolio_knowledge/{document} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
-    
     match /portfolio_experiences/{document} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
-    
     match /portfolio_educations/{document} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
-    
-    // Contact messages - anyone can create, admin can read/update
+    match /portfolio_sections/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /contact_messages/{document} {
-      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
-      allow create: if true; // Anyone can send contact messages
+      allow create: if true;           // siapa pun bisa kirim pesan
+      allow read, update, delete: if isAdmin();
     }
   }
 }
 
-// CARA DEPLOY RULES:
-// 1. Buka Firebase Console → Firestore Database → Rules
-// 2. Copy paste salah satu rules di atas
+// Storage Production Rules
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // Baca publik
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+
+    // Tulis hanya admin di folder images/
+    match /images/{allPaths=**} {
+      allow write: if isAdmin();
+    }
+  }
+}
+
+// Cara publish rules:
+// 1. Buka Firebase Console → Firestore Database → Rules & Storage → Rules
+// 2. Tempel blok DEV (saat pengembangan) atau PROD (untuk produksi)
 // 3. Klik "Publish"
