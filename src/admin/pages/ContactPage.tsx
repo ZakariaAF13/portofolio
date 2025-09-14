@@ -3,9 +3,6 @@ import { motion } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import { 
-  FiMail, 
-  FiPhone, 
-  FiMapPin,
   FiSave,
   FiX,
   FiEdit3,
@@ -13,9 +10,6 @@ import {
 } from 'react-icons/fi';
 
 interface ContactInfo {
-  email: string;
-  phone: string;
-  address: string;
   contactMessage: string;
 }
 
@@ -24,9 +18,6 @@ export default function ContactPage() {
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [contactInfo, setContactInfo] = useState<ContactInfo>({
-    email: profile?.email || '',
-    phone: profile?.phone || '',
-    address: profile?.address || '',
     contactMessage: profile?.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -34,8 +25,8 @@ export default function ContactPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Save only contactInfo fields (profile may be null initially)
-      await updateProfile({ ...contactInfo });
+      // Save only contactMessage (profile may be null initially)
+      await updateProfile({ contactMessage: contactInfo.contactMessage });
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating contact info:', error);
@@ -46,48 +37,20 @@ export default function ContactPage() {
 
   const handleCancel = () => {
     setContactInfo({
-      email: profile?.email || '',
-      phone: profile?.phone || '',
-      address: profile?.address || '',
       contactMessage: profile?.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
     });
     setIsEditing(false);
   };
 
-  // Keep contactInfo in sync if profile loads/changes later
   // (profile can be null initially)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setContactInfo({
-      email: profile?.email || '',
-      phone: profile?.phone || '',
-      address: profile?.address || '',
       contactMessage: profile?.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"
     });
-  }, [profile?.email, profile?.phone, profile?.address, profile?.contactMessage]);
+  }, [profile?.contactMessage]);
 
   const contactFields = [
-    {
-      key: 'email' as keyof ContactInfo,
-      label: 'Email Address',
-      icon: FiMail,
-      type: 'email',
-      placeholder: 'your.email@example.com'
-    },
-    {
-      key: 'phone' as keyof ContactInfo,
-      label: 'Phone Number',
-      icon: FiPhone,
-      type: 'tel',
-      placeholder: '+62852-1955-0092'
-    },
-    {
-      key: 'address' as keyof ContactInfo,
-      label: 'Address',
-      icon: FiMapPin,
-      type: 'text',
-      placeholder: 'City, Country'
-    },
     {
       key: 'contactMessage' as keyof ContactInfo,
       label: 'Contact Message',
@@ -207,56 +170,7 @@ export default function ContactPage() {
           </div>
         </motion.div>
 
-        {/* Contact Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-8"
-        >
-          <div className={`rounded-xl shadow-sm border overflow-hidden ${isLightMode ? 'bg-white border-gray-100' : 'bg-slate-800 border-slate-700'}`}>
-            <div className="p-6">
-              <h3 className={`text-lg font-semibold mb-4 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>
-                Contact Preview
-              </h3>
-              <p className={`text-sm mb-6 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                This is how your contact information will appear to visitors
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {contactFields.filter(field => contactInfo[field.key]).map((field) => {
-                  const Icon = field.icon;
-                  return (
-                    <div key={field.key} className={`flex items-center space-x-3 p-3 rounded-lg ${isLightMode ? 'bg-gray-50' : 'bg-slate-700'}`}>
-                      <div className="flex-shrink-0">
-                        <Icon className={`w-5 h-5 ${isLightMode ? 'text-blue-600' : 'text-blue-400'}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-medium uppercase tracking-wide ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          {field.label}
-                        </p>
-                        <p className={`text-sm truncate ${isLightMode ? 'text-gray-900' : 'text-white'}`}>
-                          {contactInfo[field.key]}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {Object.values(contactInfo).every(value => !value) && (
-                <div className="text-center py-8">
-                  <div className={`mb-2 ${isLightMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <FiMail className="w-12 h-12 mx-auto" />
-                  </div>
-                  <p className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    No contact information available. Click "Edit Contact Info" to add your basic contact details.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
+        {/* Contact Preview removed as requested */}
       </div>
     </div>
   );

@@ -232,7 +232,7 @@ export default function AboutPage() {
   const [whatIDoFormData, setWhatIDoFormData] = useState({
     title: '',
     description: '',
-    icon: 'FiCode',
+    icon: 'Code',
     iconColor: '#3B82F6',
     backgroundColor: '#EFF6FF'
   });
@@ -296,7 +296,7 @@ export default function AboutPage() {
     setWhatIDoFormData({
       title: '',
       description: '',
-      icon: 'FiCode',
+      icon: 'Code',
       iconColor: '#3B82F6',
       backgroundColor: '#EFF6FF'
     });
@@ -446,46 +446,51 @@ export default function AboutPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {whatIDoItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-lg p-4 border ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className={`p-2 rounded-lg ${item.backgroundColor}`}>
-                          <div className={`w-5 h-5 ${item.iconColor}`}>
-                            <div className="w-full h-full bg-current opacity-20 rounded"></div>
+                  {whatIDoItems.map((item) => {
+                    // find matching icon component; support legacy names like 'FiCode' by stripping 'Fi'
+                    const normalizeIconName = (name: string) => name?.replace(/^Fi/, '') || 'Code';
+                    const normalized = normalizeIconName(item.icon as any);
+                    const IconComp = (iconOptions.find(opt => opt.name === normalized)?.icon) || Code;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`rounded-lg p-4 border ${item.backgroundColor} ${isLightMode ? 'border-gray-200' : 'border-slate-600'}`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className={`p-2 rounded-lg inline-flex items-center justify-center bg-white/40`}>
+                            <IconComp className={`w-5 h-5 ${item.iconColor}`} />
+                          </div>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleEditWhatIDo(item)}
+                              className={`p-1.5 text-gray-500 hover:text-blue-600 rounded transition-colors ${isLightMode ? 'hover:bg-blue-50' : 'hover:bg-blue-900/30'}`}
+                            >
+                              <FiEdit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteWhatIDo(item.id, item.title)}
+                              className={`p-1.5 text-gray-500 hover:text-red-600 rounded transition-colors ${isLightMode ? 'hover:bg-red-50' : 'hover:bg-red-900/30'}`}
+                            >
+                              <FiTrash2 size={14} />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => handleEditWhatIDo(item)}
-                            className={`p-1.5 text-gray-500 hover:text-blue-600 rounded transition-colors ${isLightMode ? 'hover:bg-blue-50' : 'hover:bg-blue-900/30'}`}
-                          >
-                            <FiEdit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteWhatIDo(item.id, item.title)}
-                            className={`p-1.5 text-gray-500 hover:text-red-600 rounded transition-colors ${isLightMode ? 'hover:bg-red-50' : 'hover:bg-red-900/30'}`}
-                          >
-                            <FiTrash2 size={14} />
-                          </button>
+                        
+                        <h4 className={`font-medium mb-2 text-black`}>
+                          {item.title}
+                        </h4>
+                        <p className={`text-sm leading-relaxed text-black`}>
+                          {item.description}
+                        </p>
+
+                        <div className={`mt-3 flex items-center justify-between text-xs text-black/80`}>
+                          <span>Icon: {normalized}</span>
+                          <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      
-                      <h4 className={`font-medium mb-2 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>
-                        {item.title}
-                      </h4>
-                      <p className={`text-sm leading-relaxed ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
-                        {item.description}
-                      </p>
-                      
-                      <div className={`mt-3 flex items-center justify-between text-xs ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                        <span>Icon: {item.icon}</span>
-                        <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 
                 {whatIDoItems.length === 0 && (

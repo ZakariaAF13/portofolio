@@ -1,4 +1,6 @@
 import { Send, Phone, Mail, MapPin } from 'lucide-react';
+import { useRef } from 'react';
+import ScrollDownHint from './ScrollDownHint';
 import { useForm, ValidationError } from '@formspree/react';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import { useAnalytics, usePageTracking } from '../hooks/useAnalytics';
@@ -13,6 +15,7 @@ export default function Contact({ theme }: ContactProps) {
   const { profile } = useFirebaseData();
   const [state, handleSubmit] = useForm("xgvldqev");
   const { trackContactFormSubmit } = useAnalytics();
+  const sectionRef = useRef<HTMLElement>(null);
   
   usePageTracking('Contact');
 
@@ -30,7 +33,7 @@ export default function Contact({ theme }: ContactProps) {
     : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500';
 
   return (
-    <section className={`${cardClass} rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
+    <section ref={sectionRef} className={`${cardClass} relative rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
         <h2 className={`text-3xl font-bold ${textClass}`}>
           Contact
@@ -205,6 +208,7 @@ export default function Contact({ theme }: ContactProps) {
           )}
         </div>
       </div>
+      <ScrollDownHint targetRef={sectionRef} theme={theme} />
     </section>
   );
 }

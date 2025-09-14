@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
+import ScrollDownHint from './ScrollDownHint';
 
 interface ProjectsProps {
   theme: Theme;
@@ -9,6 +10,7 @@ interface ProjectsProps {
 export default function Projects({ theme }: ProjectsProps) {
   const { projects } = useFirebaseData();
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const sectionRef = useRef<HTMLElement>(null);
 
   // Load TikTok embed script
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function Projects({ theme }: ProjectsProps) {
   const tikTokProjects = filteredProjects.filter(p => p.category === 'TikTok' && p.tiktokUrl);
 
   return (
-    <section className={`${theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white'} rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
+    <section ref={sectionRef} className={`${theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white'} relative rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
         <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
           Project
@@ -202,6 +204,7 @@ export default function Projects({ theme }: ProjectsProps) {
           </p>
         </div>
       )}
+      <ScrollDownHint targetRef={sectionRef} theme={theme} />
     </section>
   );
 }

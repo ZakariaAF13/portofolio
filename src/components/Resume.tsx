@@ -1,4 +1,6 @@
 import { Calendar, MapPin, Building } from 'lucide-react';
+import { useRef } from 'react';
+import ScrollDownHint from './ScrollDownHint';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 
@@ -9,6 +11,7 @@ interface ResumeProps {
 
 export default function Resume({ theme }: ResumeProps) {
   const { skills, knowledge, experiences, educations } = useFirebaseData();
+  const sectionRef = useRef<HTMLElement>(null);
   
   const cardClass = theme === 'dark' 
     ? 'bg-slate-800 border border-slate-700' 
@@ -38,7 +41,7 @@ export default function Resume({ theme }: ResumeProps) {
   // Knowledge items now come from DataContext (admin editable)
 
   return (
-    <section className={`${cardClass} rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
+    <section ref={sectionRef} className={`${cardClass} relative rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
         <h2 className={`text-3xl font-bold ${textClass}`}>
           Resume
@@ -163,6 +166,7 @@ export default function Resume({ theme }: ResumeProps) {
           </div>
         </div>
       </div>
+      <ScrollDownHint targetRef={sectionRef} theme={theme} />
     </section>
   );
 }

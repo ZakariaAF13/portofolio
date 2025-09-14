@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { useFirebaseData } from './context/FirebaseDataContext';
 import Navigation from './components/Navigation';
@@ -10,9 +10,19 @@ import Contact from './components/Contact';
 import type { Section } from './types';
 
 function AppContent() {
-  const [activeSection, setActiveSection] = useState<Section>('project');
+  const [activeSection, setActiveSection] = useState<Section>(() => {
+    const saved = localStorage.getItem('activeSection') as Section | null;
+    return saved || 'about';
+  });
   const { theme } = useTheme();
   const firebaseData = useFirebaseData();
+
+  // Persist user section selection across visits
+  useEffect(() => {
+    try {
+      localStorage.setItem('activeSection', activeSection);
+    } catch {}
+  }, [activeSection]);
 
   // Show loading state while Firebase data is loading
   if (!firebaseData.profile) {

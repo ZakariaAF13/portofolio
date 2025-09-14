@@ -6,6 +6,7 @@ import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Project } from '../types';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import SuccessModal from '../components/SuccessModal';
+import { ImageCropper } from '../components/ImageCropper';
 
 export default function ProjectsPage() {
   const { projects, addProject, updateProject, deleteProject } = useFirebaseData();
@@ -26,6 +27,9 @@ export default function ProjectsPage() {
   });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Image Cropper state
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [cropSource, setCropSource] = useState<string | null>(null);
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState({
@@ -115,17 +119,56 @@ export default function ProjectsPage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string;
-        setPreviewImage(imageUrl);
-        setFormData(prev => ({ ...prev, imageUrl }));
+        // Open cropper with selected image
+        setCropSource(imageUrl);
+        setIsCropperOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (cropped: string) => {
+    setPreviewImage(cropped);
+    setFormData(prev => ({ ...prev, imageUrl: cropped }));
+    setIsCropperOpen(false);
+    setCropSource(null);
+  };
+
+  const handleCropCancel = () => {
+    setIsCropperOpen(false);
+    // keep existing previewImage & form data
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      // Helpers to normalize TikTok URLs
+      const tiktokLongRegex = /^https?:\/\/(www\.)?tiktok\.com\/@[^/]+\/video\/(\d+)/i;
+      const tiktokShortRegex = /^https?:\/\/vt\.tiktok\.com\/.+/i;
+      const resolveTikTokUrl = async (shortUrl: string): Promise<string | null> => {
+        try {
+          const response = await fetch(shortUrl, { redirect: 'follow' as RequestRedirect });
+          return response.url || null;
+        } catch (err) {
+          console.error('Gagal resolve TikTok short link:', err);
+          return null;
+        }
+      };
+
+      // Prepare normalized TikTok URL if needed
+      let normalizedTikTokUrl = formData.tiktokUrl;
+      if (formData.category === 'TikTok' && formData.tiktokUrl) {
+        if (tiktokShortRegex.test(formData.tiktokUrl)) {
+          const resolved = await resolveTikTokUrl(formData.tiktokUrl);
+          if (resolved) normalizedTikTokUrl = resolved;
+        }
+        // Optional: validate final URL shape (long format)
+        if (normalizedTikTokUrl && !tiktokLongRegex.test(normalizedTikTokUrl)) {
+          console.warn('TikTok URL tidak sesuai format panjang. Tetap disimpan apa adanya.');
+        }
+      }
+
       if (editingProject) {
         await updateProject(editingProject.id, {
           title: formData.title,
@@ -134,7 +177,7 @@ export default function ProjectsPage() {
           description: formData.description,
           technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
           imageUrl: formData.imageUrl,
-          tiktokUrl: formData.tiktokUrl,
+          tiktokUrl: normalizedTikTokUrl,
           liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
         });
         showSuccessModal('Project Updated!', `"${formData.title}" has been updated successfully.`);
@@ -146,7 +189,7 @@ export default function ProjectsPage() {
           description: formData.description,
           technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
           imageUrl: formData.imageUrl,
-          tiktokUrl: formData.tiktokUrl,
+          tiktokUrl: normalizedTikTokUrl,
           liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
           createdAt: new Date().toISOString().split('T')[0],
         });
@@ -501,16 +544,31 @@ export default function ProjectsPage() {
                               alt="Preview"
                               className="w-full h-32 object-cover rounded-lg border border-gray-300 dark:border-slate-600"
                             />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPreviewImage(null);
-                                setFormData(prev => ({ ...prev, imageUrl: '' }));
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                            >
-                              <FiX size={14} />
-                            </button>
+                            <div className="absolute top-2 right-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Open cropper with current preview to re-crop
+                                  setCropSource(previewImage);
+                                  setIsCropperOpen(true);
+                                }}
+                                className="bg-blue-600 text-white rounded-full p-1 hover:bg-blue-700 transition-colors"
+                                title="Crop/Adjust"
+                              >
+                                ✂
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewImage(null);
+                                  setFormData(prev => ({ ...prev, imageUrl: '' }));
+                                }}
+                                className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                title="Remove"
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -556,6 +614,15 @@ export default function ProjectsPage() {
           message={successModal.message}
           type={successModal.type}
         />
+
+        {/* Image Cropper Modal */}
+        {isCropperOpen && cropSource && (
+          <ImageCropper
+            imageSrc={cropSource}
+            onCropComplete={handleCropComplete}
+            onCancel={handleCropCancel}
+          />
+        )}
       </div>
     </div>
   );
