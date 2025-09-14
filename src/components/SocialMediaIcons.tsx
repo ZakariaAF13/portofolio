@@ -186,7 +186,7 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
 
         if (variant === 'brandHover') {
           const [isHovered, setIsHovered] = React.useState(false);
-          const colors = getColorClasses(link.name);
+          const baseTextClass = link.baseText as string;
           const getBrandColor = (baseTextClass: string) => {
             if (baseTextClass.includes('blue')) return '#2563eb';
             if (baseTextClass.includes('green')) return '#16a34a';
@@ -201,7 +201,7 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
             return '#2563eb'; 
           };
           
-          const brandColor = getBrandColor(colors.baseText);
+          const brandColor = getBrandColor(baseTextClass);
           return (
             <a
               key={link.name}

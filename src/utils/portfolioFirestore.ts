@@ -13,6 +13,13 @@ import {
 } from "firebase/firestore";
 import type { Project, Skill, Profile, WhatIDoItem, Experience, Education } from '../admin/types';
 
+// Helper: remove keys with undefined values to satisfy Firestore constraints
+function stripUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as Partial<T>;
+}
+
 // Collections
 const COLLECTIONS = {
   PROJECTS: 'portfolio_projects',
@@ -29,11 +36,13 @@ const COLLECTIONS = {
 // Projects
 export async function addProjectToFirestore(project: Omit<Project, 'id'>) {
   try {
-    const docRef = await addDoc(collection(db, COLLECTIONS.PROJECTS), {
-      ...project,
+    const cleaned = stripUndefined(project);
+    const payload = {
+      ...cleaned,
       createdAt: new Date().toISOString().split('T')[0]
-    });
-    return { id: docRef.id, ...project };
+    } as Omit<Project, 'id'>;
+    const docRef = await addDoc(collection(db, COLLECTIONS.PROJECTS), payload);
+    return { id: docRef.id, ...payload } as Project;
   } catch (error) {
     console.error("Error adding project:", error);
     throw error;
@@ -58,7 +67,8 @@ export async function getProjectsFromFirestore(): Promise<Project[]> {
 export async function updateProjectInFirestore(id: string, project: Partial<Project>) {
   try {
     const projectRef = doc(db, COLLECTIONS.PROJECTS, id);
-    await updateDoc(projectRef, project);
+    const cleaned = stripUndefined(project as Record<string, any>);
+    await updateDoc(projectRef, cleaned);
   } catch (error) {
     console.error("Error updating project:", error);
     throw error;
