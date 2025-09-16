@@ -1,18 +1,20 @@
-import { useState, useRef } from 'react';
-import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload } from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload, FiMove } from 'react-icons/fi';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Project } from '../types';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import SuccessModal from '../components/SuccessModal';
 import { ImageCropper } from '../components/ImageCropper';
+import { updatePortfolioSettingsInFirestore, getPortfolioSettingsFromFirestore } from '../../utils/portfolioFirestore';
 
 export default function ProjectsPage() {
   const { projects, addProject, updateProject, deleteProject } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -46,6 +48,64 @@ export default function ProjectsPage() {
     message: '',
     type: 'success' as 'success' | 'info' | 'warning'
   });
+
+  // Move modal state
+  const derivedCategories = useMemo(() => Array.from(new Set(projects.map(p => p.category))).filter(Boolean), [projects]);
+  const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
+  const [activeMoveCategory, setActiveMoveCategory] = useState<string>('all');
+  // Keep a stable global order list of project IDs to prevent stacking/duplication issues
+  const [orderedIds, setOrderedIds] = useState<string[]>([]);
+  // Drag UI helpers
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(('matches' in e ? e.matches : (e as MediaQueryList).matches));
+    };
+    // initialize
+    handler(mq);
+    // subscribe
+    mq.addEventListener ? mq.addEventListener('change', handler as (e: MediaQueryListEvent) => void) : mq.addListener(handler as any);
+    return () => {
+      mq.removeEventListener ? mq.removeEventListener('change', handler as (e: MediaQueryListEvent) => void) : mq.removeListener(handler as any);
+    };
+  }, []);
+
+  const openMoveModal = async () => {
+    // Load settings for categories order (if exists)
+    try {
+      const settings = await getPortfolioSettingsFromFirestore();
+      const existingOrder = settings && Array.isArray((settings as any).categories_order)
+        ? (settings as any).categories_order as string[]
+        : [];
+      // Merge: keep existing order first, then append any new categories
+      const merged = [...existingOrder.filter(c => derivedCategories.includes(c)), ...derivedCategories.filter(c => !existingOrder.includes(c))];
+      setCategoryOrder(merged);
+    } catch (e) {
+      setCategoryOrder(derivedCategories);
+    }
+    // Build initial project order list: order by order_index asc (if defined) then createdAt desc
+    const withIndex = [...projects].sort((a, b) => {
+      const ai = (a.order_index ?? Number.POSITIVE_INFINITY);
+      const bi = (b.order_index ?? Number.POSITIVE_INFINITY);
+      if (ai !== bi) return ai - bi;
+      // fallback: newer first
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+    setOrderedIds(withIndex.map(p => p.id));
+    setActiveMoveCategory('all');
+    setIsMoveOpen(true);
+  };
+
+  const closeMoveModal = () => {
+    setIsMoveOpen(false);
+    setActiveMoveCategory('all');
+    setOrderedIds([]);
+  };
 
   const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -264,15 +324,25 @@ export default function ProjectsPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Projects</h1>
-            <p className={`mt-1 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your portfolio projects.</p>
+            <p className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your portfolio projects.</p>
           </div>
-          <button 
-            onClick={() => openModal()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <FiPlus />
-            <span>Add Project</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={openMoveModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              title="Reorder Projects & Categories"
+            >
+              <FiMove />
+              <span>Move</span>
+            </button>
+            <button 
+              onClick={() => openModal()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FiPlus />
+              <span>Add Project</span>
+            </button>
+          </div>
         </div>
 
         <div className={`rounded-xl shadow-sm ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}>
@@ -623,6 +693,207 @@ export default function ProjectsPage() {
             onCancel={handleCropCancel}
           />
         )}
+
+        {/* Move/Reorder Modal */}
+        <AnimatePresence>
+          {isMoveOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+              onClick={closeMoveModal}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className={`rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className={`text-xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Move Projects & Categories</h2>
+                    <button onClick={closeMoveModal} className={`${isLightMode ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 hover:text-gray-100'}`}>
+                      <FiX size={22} />
+                    </button>
+                  </div>
+
+                  {/* Draggable Categories (All fixed at the far left) */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className={`font-semibold ${isLightMode ? 'text-gray-800' : 'text-gray-200'}`}>Categories</h3>
+                      <span className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Drag to move categories. "All" fixed at left.</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Fixed All at left */}
+                      <button
+                        onClick={() => setActiveMoveCategory('all')}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${activeMoveCategory === 'all' ? 'bg-blue-600 text-white border-blue-600' : (isLightMode ? 'text-gray-700 border-gray-300' : 'text-gray-300 border-slate-600')}`}
+                        title="All category is fixed"
+                      >
+                        All
+                      </button>
+                      <Reorder.Group axis="x" values={categoryOrder} onReorder={setCategoryOrder} className="flex items-center gap-2 flex-wrap">
+                        {categoryOrder.map((cat) => (
+                          <Reorder.Item key={cat} value={cat}>
+                            <motion.button
+                              onClick={() => setActiveMoveCategory(cat)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${activeMoveCategory === cat ? 'bg-blue-600 text-white border-blue-600' : (isLightMode ? 'text-gray-700 border-gray-300' : 'text-gray-300 border-slate-600')}`}
+                              whileHover={{ scale: 1.03 }}
+                            >
+                              {cat}
+                            </motion.button>
+                          </Reorder.Item>
+                        ))}
+                      </Reorder.Group>
+                    </div>
+                  </div>
+
+                  {/* Draggable Project Cards */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className={`font-semibold ${isLightMode ? 'text-gray-800' : 'text-gray-200'}`}>Move Projects</h3>
+                      <span className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Drag cards to choose which appears first (left) and next (middle/right)</span>
+                    </div>
+
+                    {(() => {
+                      const idToProject = new Map(projects.map(p => [p.id, p] as const));
+                      const allOrdered = orderedIds.map(id => idToProject.get(id)).filter(Boolean) as Project[];
+                      const visibleProjects = activeMoveCategory === 'all'
+                        ? allOrdered
+                        : allOrdered.filter(p => p.category === activeMoveCategory);
+                      const visibleIds = visibleProjects.map(p => p.id);
+                      const dragAxis = isMobile ? 'y' : (visibleProjects.length > 3 ? 'xy' : 'x');
+
+                      return (
+                        <Reorder.Group
+                          values={visibleIds}
+                          onReorder={(newVisibleIds) => {
+                            // Ensure smooth single-card insertion without multiple shifts
+                            setOrderedIds((prev) => {
+                              if (activeMoveCategory === 'all') {
+                                return newVisibleIds;
+                              }
+                              
+                              const prevIds = [...prev];
+                              const isInCat = (id: string) => idToProject.get(id)?.category === activeMoveCategory;
+                              
+                              // Get current category items and their positions
+                              const currentCatItems = prevIds.filter(isInCat);
+                              const categoryPositions: number[] = [];
+                              prevIds.forEach((id, idx) => {
+                                if (isInCat(id)) categoryPositions.push(idx);
+                              });
+                              
+                              // Only update if the order actually changed to prevent unnecessary shifts
+                              const currentOrder = currentCatItems.map(id => id);
+                              const newOrder = newVisibleIds;
+                              
+                              if (JSON.stringify(currentOrder) !== JSON.stringify(newOrder)) {
+                                // Replace with new order at original positions
+                                categoryPositions.forEach((pos, i) => {
+                                  if (i < newOrder.length) {
+                                    prevIds[pos] = newOrder[i];
+                                  }
+                                });
+                              }
+                              
+                              return prevIds;
+                            });
+                          }}
+                          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                          layoutScroll={false}
+                        >
+                          {visibleProjects.map((project) => (
+                            <Reorder.Item 
+                              key={project.id} 
+                              value={project.id} 
+                              drag={dragAxis}
+                            >
+                              <motion.div
+                                className={`${isLightMode ? 'bg-gray-50' : 'bg-slate-700'} rounded-xl border ${
+                                  hoveredId === project.id && isDragging
+                                    ? 'border-blue-500 ring-2 ring-blue-300'
+                                    : (isLightMode ? 'border-gray-200' : 'border-slate-600')
+                                } overflow-hidden cursor-move touch-none select-none ${draggingId === project.id ? 'z-50' : ''}`}
+                                layout
+                                whileDrag={{ scale: 1.05, boxShadow: '0 12px 32px rgba(0,0,0,0.35)' }}
+                                animate={isDragging && draggingId === project.id ? { rotate: 0 } : { rotate: [0, 1.2, -1.2, 0] }}
+                                transition={{ 
+                                  layout: { type: 'spring', stiffness: 600, damping: 50, mass: 0.8 }, 
+                                  rotate: { 
+                                    repeat: isDragging && draggingId === project.id ? 0 : Infinity, 
+                                    duration: 1.6, 
+                                    ease: 'easeInOut' 
+                                  }
+                                }}
+                                onMouseEnter={() => setHoveredId(project.id)}
+                                onMouseLeave={() => setHoveredId((prev) => (prev === project.id ? null : prev))}
+                                onDragStart={() => { setIsDragging(true); setDraggingId(project.id); }}
+                                onDragEnd={() => { setIsDragging(false); setDraggingId(null); }}
+                              >
+                                <div className="aspect-square flex items-center justify-center p-4 relative">
+                                  {project.imageUrl ? (
+                                    <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover rounded-lg" draggable={false} />
+                                  ) : (
+                                    <div className="w-full h-full rounded-lg flex items-center justify-center text-2xl font-bold bg-blue-600 text-white" draggable={false}>
+                                      {project.title.split(' ').map(w => w[0]).join('').slice(0,2)}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className={`p-4 ${isDragging && draggingId !== project.id ? 'opacity-90' : ''}`}>
+                                  <div className={`${isLightMode ? 'text-gray-500' : 'text-gray-300'} text-xs mb-1`}>{project.category}</div>
+                                  <div className={`${isLightMode ? 'text-gray-900' : 'text-white'} font-semibold`}>{project.title}</div>
+                                  {project.description && (
+                                    <p className={`text-sm mt-2 ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>{project.description}</p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            </Reorder.Item>
+                          ))}
+                        </Reorder.Group>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-6">
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Persist categories order
+                          await updatePortfolioSettingsInFirestore({ categories_order: categoryOrder });
+
+                          // Build new order_index for all projects based on current orderedIds (global)
+                          const updates = orderedIds.map((id, idx) => ({ id, order_index: idx }));
+                          // Update sequentially to avoid rate-limiting issues
+                          for (const u of updates) {
+                            await updateProject(u.id, { order_index: u.order_index });
+                          }
+                          showSuccessModal('Move Saved', 'Project and category positions have been updated.');
+                          closeMoveModal();
+                        } catch (err) {
+                          console.error('Error saving order:', err);
+                          showSuccessModal('Error', 'Failed to save new positions. Please try again.', 'warning');
+                        }
+                      }}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Save Move
+                    </button>
+                    <button
+                      onClick={closeMoveModal}
+                      className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

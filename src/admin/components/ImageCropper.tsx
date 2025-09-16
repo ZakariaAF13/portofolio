@@ -67,18 +67,15 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     // Restore context
     ctx.restore();
 
-    // Draw crop overlay
+    // Draw crop overlay (guides) on the visible canvas only (DO NOT bake into export)
     ctx.strokeStyle = '#3B82F6';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
-    
     const cropSize = Math.min(size * 0.8, size * 0.8);
     const cropX = (size - cropSize) / 2;
     const cropY = (size - cropSize) / 2;
-    
     ctx.strokeRect(cropX, cropY, cropSize, cropSize);
-    
-    // Draw overlay outside crop area
+    // Darken outside area
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, 0, size, cropY); // top
     ctx.fillRect(0, cropY + cropSize, size, size - cropY - cropSize); // bottom
@@ -183,24 +180,47 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   };
 
   const handleCrop = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const image = imageRef.current;
+    if (!image) return;
 
+    // Render the transformed image to an OFFSCREEN canvas WITHOUT overlays
     const size = 300;
+    const cleanCanvas = document.createElement('canvas');
+    cleanCanvas.width = size;
+    cleanCanvas.height = size;
+    const cleanCtx = cleanCanvas.getContext('2d');
+    if (!cleanCtx) return;
+
+    // draw transformed image (same logic as drawCanvas, but without overlay guides)
+    cleanCtx.save();
+    cleanCtx.translate(size / 2, size / 2);
+    cleanCtx.rotate((rotation * Math.PI) / 180);
+    const imageEl = image as HTMLImageElement;
+    const scaledWidth = imageEl.naturalWidth * zoom;
+    const scaledHeight = imageEl.naturalHeight * zoom;
+    cleanCtx.drawImage(
+      imageEl,
+      -scaledWidth / 2 + position.x,
+      -scaledHeight / 2 + position.y,
+      scaledWidth,
+      scaledHeight
+    );
+    cleanCtx.restore();
+
+    // Define crop area (same as visible guides)
     const cropSize = Math.min(size * 0.8, size * 0.8);
     const cropX = (size - cropSize) / 2;
     const cropY = (size - cropSize) / 2;
 
-    // Create a new canvas for the cropped image (square)
+    // Create a canvas for the cropped output
     const cropCanvas = document.createElement('canvas');
     cropCanvas.width = cropSize;
     cropCanvas.height = cropSize;
-
-    const srcCtx = canvas.getContext('2d');
     const cropCtx = cropCanvas.getContext('2d');
-    if (!srcCtx || !cropCtx) return;
+    if (!cropCtx) return;
 
-    const imageData = srcCtx.getImageData(cropX, cropY, cropSize, cropSize);
+    // Extract from clean (overlay-free) render
+    const imageData = cleanCtx.getImageData(cropX, cropY, cropSize, cropSize);
     cropCtx.putImageData(imageData, 0, 0);
 
     // Return base64 data URL (JPEG) to store directly in Firestore

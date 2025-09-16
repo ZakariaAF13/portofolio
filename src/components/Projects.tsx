@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 import ScrollDownHint from './ScrollDownHint';
+import { getPortfolioSettingsFromFirestore } from '../utils/portfolioFirestore';
 
 interface ProjectsProps {
   theme: Theme;
@@ -11,6 +12,7 @@ export default function Projects({ theme }: ProjectsProps) {
   const { projects } = useFirebaseData();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const sectionRef = useRef<HTMLElement>(null);
+  const [categoriesOrder, setCategoriesOrder] = useState<string[]>([]);
 
   // Load TikTok embed script
   useEffect(() => {
@@ -28,16 +30,34 @@ export default function Projects({ theme }: ProjectsProps) {
     };
   }, []);
 
+  // Load categories order from settings
+  useEffect(() => {
+    (async () => {
+      try {
+        const settings = await getPortfolioSettingsFromFirestore();
+        const ordered = (settings && Array.isArray((settings as any).categories_order)) ? (settings as any).categories_order as string[] : [];
+        setCategoriesOrder(ordered);
+      } catch {
+        setCategoriesOrder([]);
+      }
+    })();
+  }, []);
+
   // Extract TikTok video ID from URL
   const extractTikTokVideoId = (url: string): string | null => {
     const match = url.match(/\/video\/(\d+)/);
     return match ? match[1] : null;
   };
 
+  // Compute categories honoring settings order: 'all' first, then ordered list, then the rest
+  const allCats = Array.from(new Set(projects.map(p => p.category))).filter(Boolean);
+  const orderedCats = [
+    ...categoriesOrder.filter(c => allCats.includes(c)),
+    ...allCats.filter(c => !categoriesOrder.includes(c))
+  ];
   const categories = [
     { id: 'all', label: 'All' },
-    ...Array.from(new Set(projects.map(p => p.category)))
-      .map(category => ({ id: category, label: category }))
+    ...orderedCats.map(category => ({ id: category, label: category }))
   ];
 
   const filteredProjects = activeCategory === 'all' 

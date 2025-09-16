@@ -57,6 +57,13 @@ export async function getProjectsFromFirestore(): Promise<Project[]> {
     querySnapshot.forEach((docSnap) => {
       projects.push({ ...(docSnap.data() as Omit<Project, 'id'>), id: docSnap.id });
     });
+    // Client-side sort: prioritize manual order_index (asc), fallback to createdAt desc
+    projects.sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
     return projects;
   } catch (error) {
     console.error("Error getting projects:", error);
@@ -364,7 +371,8 @@ export type PortfolioSettings = {
   linkedin_url?: string;
   github_url?: string;
   twitter_url?: string;
-  website_url?: string;
+  // Admin: custom category order for Projects page (optional)
+  categories_order?: string[];
 };
 
 export async function getPortfolioSettingsFromFirestore(): Promise<PortfolioSettings | null> {

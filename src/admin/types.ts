@@ -4,6 +4,8 @@ export interface Project {
   category: string;
   status: 'Published' | 'Draft';
   createdAt: string;
+  // Optional manual sort index (lower comes first). When absent, fallback to createdAt desc.
+  order_index?: number;
   description?: string;
   imageUrl?: string;
   technologies?: string[];
