@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload, FiMove } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload, FiMove, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
@@ -55,25 +55,7 @@ export default function ProjectsPage() {
   const [activeMoveCategory, setActiveMoveCategory] = useState<string>('all');
   // Keep a stable global order list of project IDs to prevent stacking/duplication issues
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
-  // Drag UI helpers
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
-    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
-      setIsMobile(('matches' in e ? e.matches : (e as MediaQueryList).matches));
-    };
-    // initialize
-    handler(mq);
-    // subscribe
-    mq.addEventListener ? mq.addEventListener('change', handler as (e: MediaQueryListEvent) => void) : mq.addListener(handler as any);
-    return () => {
-      mq.removeEventListener ? mq.removeEventListener('change', handler as (e: MediaQueryListEvent) => void) : mq.removeListener(handler as any);
-    };
-  }, []);
+  // Drag UI removed; using table with up/down buttons instead
 
   const openMoveModal = async () => {
     // Load settings for categories order (if exists)
@@ -105,6 +87,45 @@ export default function ProjectsPage() {
     setIsMoveOpen(false);
     setActiveMoveCategory('all');
     setOrderedIds([]);
+  };
+
+  // Helper: move a project up/down within the currently visible list (all or specific category)
+  const moveProjectInView = (id: string, direction: 'up' | 'down') => {
+    const idToProject = new Map(projects.map(p => [p.id, p] as const));
+    const allOrdered = orderedIds.map(pid => idToProject.get(pid)).filter(Boolean) as Project[];
+    const visibleProjects = activeMoveCategory === 'all'
+      ? allOrdered
+      : allOrdered.filter(p => p.category === activeMoveCategory);
+    const visibleIds = visibleProjects.map(p => p.id);
+
+    const index = visibleIds.indexOf(id);
+    if (index === -1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= visibleIds.length) return; // cannot move
+
+    // swap within visible ids
+    const newVisibleIds = [...visibleIds];
+    const tmp = newVisibleIds[index];
+    newVisibleIds[index] = newVisibleIds[targetIndex];
+    newVisibleIds[targetIndex] = tmp;
+
+    // Apply to global orderedIds
+    setOrderedIds(prev => {
+      if (activeMoveCategory === 'all') return newVisibleIds;
+
+      // integrate back to original positions of this category only
+      const prevIds = [...prev];
+      const isInCat = (pid: string) => idToProject.get(pid)?.category === activeMoveCategory;
+      const categoryPositions: number[] = [];
+      prevIds.forEach((pid, idx) => { if (isInCat(pid)) categoryPositions.push(idx); });
+      categoryPositions.forEach((pos, i) => {
+        if (i < newVisibleIds.length) {
+          prevIds[pos] = newVisibleIds[i];
+        }
+      });
+      return prevIds;
+    });
   };
 
   const filteredProjects = projects.filter(project =>
@@ -750,11 +771,11 @@ export default function ProjectsPage() {
                     </div>
                   </div>
 
-                  {/* Draggable Project Cards */}
+                  {/* Table-based Project Reordering (Up/Down) */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className={`font-semibold ${isLightMode ? 'text-gray-800' : 'text-gray-200'}`}>Move Projects</h3>
-                      <span className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Drag cards to choose which appears first (left) and next (middle/right)</span>
+                      <h3 className={`${isLightMode ? 'text-gray-800' : 'text-gray-200'} font-semibold`}>Move Projects</h3>
+                      <span className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Use the arrows to move items up or down</span>
                     </div>
 
                     {(() => {
@@ -763,96 +784,49 @@ export default function ProjectsPage() {
                       const visibleProjects = activeMoveCategory === 'all'
                         ? allOrdered
                         : allOrdered.filter(p => p.category === activeMoveCategory);
-                      const visibleIds = visibleProjects.map(p => p.id);
-                      const dragAxis = isMobile ? 'y' : (visibleProjects.length > 3 ? 'xy' : 'x');
 
                       return (
-                        <Reorder.Group
-                          values={visibleIds}
-                          onReorder={(newVisibleIds) => {
-                            // Ensure smooth single-card insertion without multiple shifts
-                            setOrderedIds((prev) => {
-                              if (activeMoveCategory === 'all') {
-                                return newVisibleIds;
-                              }
-                              
-                              const prevIds = [...prev];
-                              const isInCat = (id: string) => idToProject.get(id)?.category === activeMoveCategory;
-                              
-                              // Get current category items and their positions
-                              const currentCatItems = prevIds.filter(isInCat);
-                              const categoryPositions: number[] = [];
-                              prevIds.forEach((id, idx) => {
-                                if (isInCat(id)) categoryPositions.push(idx);
-                              });
-                              
-                              // Only update if the order actually changed to prevent unnecessary shifts
-                              const currentOrder = currentCatItems.map(id => id);
-                              const newOrder = newVisibleIds;
-                              
-                              if (JSON.stringify(currentOrder) !== JSON.stringify(newOrder)) {
-                                // Replace with new order at original positions
-                                categoryPositions.forEach((pos, i) => {
-                                  if (i < newOrder.length) {
-                                    prevIds[pos] = newOrder[i];
-                                  }
-                                });
-                              }
-                              
-                              return prevIds;
-                            });
-                          }}
-                          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                          layoutScroll={false}
-                        >
-                          {visibleProjects.map((project) => (
-                            <Reorder.Item 
-                              key={project.id} 
-                              value={project.id} 
-                              drag={dragAxis}
-                            >
-                              <motion.div
-                                className={`${isLightMode ? 'bg-gray-50' : 'bg-slate-700'} rounded-xl border ${
-                                  hoveredId === project.id && isDragging
-                                    ? 'border-blue-500 ring-2 ring-blue-300'
-                                    : (isLightMode ? 'border-gray-200' : 'border-slate-600')
-                                } overflow-hidden cursor-move touch-none select-none ${draggingId === project.id ? 'z-50' : ''}`}
-                                layout
-                                whileDrag={{ scale: 1.05, boxShadow: '0 12px 32px rgba(0,0,0,0.35)' }}
-                                animate={isDragging && draggingId === project.id ? { rotate: 0 } : { rotate: [0, 1.2, -1.2, 0] }}
-                                transition={{ 
-                                  layout: { type: 'spring', stiffness: 600, damping: 50, mass: 0.8 }, 
-                                  rotate: { 
-                                    repeat: isDragging && draggingId === project.id ? 0 : Infinity, 
-                                    duration: 1.6, 
-                                    ease: 'easeInOut' 
-                                  }
-                                }}
-                                onMouseEnter={() => setHoveredId(project.id)}
-                                onMouseLeave={() => setHoveredId((prev) => (prev === project.id ? null : prev))}
-                                onDragStart={() => { setIsDragging(true); setDraggingId(project.id); }}
-                                onDragEnd={() => { setIsDragging(false); setDraggingId(null); }}
-                              >
-                                <div className="aspect-square flex items-center justify-center p-4 relative">
-                                  {project.imageUrl ? (
-                                    <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover rounded-lg" draggable={false} />
-                                  ) : (
-                                    <div className="w-full h-full rounded-lg flex items-center justify-center text-2xl font-bold bg-blue-600 text-white" draggable={false}>
-                                      {project.title.split(' ').map(w => w[0]).join('').slice(0,2)}
+                        <div className="overflow-x-auto">
+                          <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                            <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
+                              <tr>
+                                <th className="px-4 py-2 w-16">Order</th>
+                                <th className="px-4 py-2">Title</th>
+                                <th className="px-4 py-2">Category</th>
+                                <th className="px-4 py-2 text-right">Move</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {visibleProjects.map((p, idx) => (
+                                <tr key={p.id} className={`${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                                  <td className="px-4 py-2">{idx + 1}</td>
+                                  <td className={`px-4 py-2 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{p.title}</td>
+                                  <td className="px-4 py-2">{p.category}</td>
+                                  <td className="px-4 py-2">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        onClick={() => moveProjectInView(p.id, 'up')}
+                                        disabled={idx === 0}
+                                        className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
+                                        title="Move Up"
+                                      >
+                                        <FiArrowUp />
+                                      </button>
+                                      <button
+                                        onClick={() => moveProjectInView(p.id, 'down')}
+                                        disabled={idx === visibleProjects.length - 1}
+                                        className={`p-2 rounded border ${idx === visibleProjects.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
+                                        title="Move Down"
+                                      >
+                                        <FiArrowDown />
+                                      </button>
                                     </div>
-                                  )}
-                                </div>
-                                <div className={`p-4 ${isDragging && draggingId !== project.id ? 'opacity-90' : ''}`}>
-                                  <div className={`${isLightMode ? 'text-gray-500' : 'text-gray-300'} text-xs mb-1`}>{project.category}</div>
-                                  <div className={`${isLightMode ? 'text-gray-900' : 'text-white'} font-semibold`}>{project.title}</div>
-                                  {project.description && (
-                                    <p className={`text-sm mt-2 ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>{project.description}</p>
-                                  )}
-                                </div>
-                              </motion.div>
-                            </Reorder.Item>
-                          ))}
-                        </Reorder.Group>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       );
                     })()}
                   </div>
