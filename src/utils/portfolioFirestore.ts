@@ -15,9 +15,23 @@ import type { Project, Skill, Profile, WhatIDoItem, Experience, Education } from
 
 // Helper: remove keys with undefined values to satisfy Firestore constraints
 function stripUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => v !== undefined)
-  ) as Partial<T>;
+  const result: Record<string, any> = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined && value !== null) {
+      // Handle arrays - filter out undefined/null elements
+      if (Array.isArray(value)) {
+        const cleanArray = value.filter(item => item !== undefined && item !== null);
+        if (cleanArray.length > 0) {
+          result[key] = cleanArray;
+        }
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  
+  return result as Partial<T>;
 }
 
 // Collections
@@ -73,11 +87,26 @@ export async function getProjectsFromFirestore(): Promise<Project[]> {
 
 export async function updateProjectInFirestore(id: string, project: Partial<Project>) {
   try {
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      throw new Error(`Invalid project ID provided: ${id}`);
+    }
+
     const projectRef = doc(db, COLLECTIONS.PROJECTS, id);
     const cleaned = stripUndefined(project as Record<string, any>);
+    
+    // Log the cleaned data for debugging
+    console.log('Updating project with cleaned data:', cleaned);
+    
+    // Validate that we have at least some data to update
+    if (Object.keys(cleaned).length === 0) {
+      throw new Error('No valid data provided for update');
+    }
+    
     await updateDoc(projectRef, cleaned);
   } catch (error) {
     console.error("Error updating project:", error);
+    console.error("Project ID:", id);
+    console.error("Original project data:", project);
     throw error;
   }
 }

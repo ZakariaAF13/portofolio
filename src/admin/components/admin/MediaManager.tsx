@@ -112,8 +112,10 @@ export const MediaManager: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Media Manager</h1>
           <p className="text-gray-600 mt-2">Upload and manage your portfolio images and assets</p>
         </div>
-        <label className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 cursor-pointer">
+        <label htmlFor="media-upload" className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 cursor-pointer">
           <input
+            id="media-upload"
+            name="media-upload"
             type="file"
             accept="image/*"
             onChange={uploadFile}

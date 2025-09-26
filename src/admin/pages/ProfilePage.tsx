@@ -247,11 +247,13 @@ export default function ProfilePage() {
                       Full Name
                     </label>
                     <input
+                      id="profile-name"
+                      name="name"
                       type="text"
                       required
                       value={formData?.name || ''}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                     />
                   </div>
 
@@ -260,11 +262,13 @@ export default function ProfilePage() {
                       Professional Title
                     </label>
                     <input
+                      id="profile-title"
+                      name="title"
                       type="text"
                       required
                       value={formData?.title || ''}
                       onChange={(e) => handleInputChange('title', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                     />
                   </div>
 
@@ -274,11 +278,13 @@ export default function ProfilePage() {
                       Email Address
                     </label>
                     <input
+                      id="profile-email"
+                      name="email"
                       type="email"
                       required
                       value={formData?.email || ''}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                     />
                   </div>
 
@@ -288,11 +294,13 @@ export default function ProfilePage() {
                       Phone Number
                     </label>
                     <input
+                      id="profile-phone"
+                      name="phone"
                       type="tel"
                       required
                       value={formData?.phone || ''}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                     />
                   </div>
 
@@ -302,11 +310,13 @@ export default function ProfilePage() {
                       Location
                     </label>
                     <input
+                      id="profile-location"
+                      name="location"
                       type="text"
                       required
                       value={formData?.location || ''}
                       onChange={(e) => handleInputChange('location', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                     />
                   </div>
 
@@ -316,11 +326,13 @@ export default function ProfilePage() {
                       Birthday
                     </label>
                     <input
+                      id="profile-birthday"
+                      name="birthday"
                       type="text"
                       required
                       value={formData?.birthday || ''}
                       onChange={(e) => handleInputChange('birthday', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                       placeholder="e.g., September 13, 2003"
                     />
                   </div>
@@ -331,10 +343,12 @@ export default function ProfilePage() {
                       CV Download URL
                     </label>
                     <input
+                      id="profile-cv-url"
+                      name="cvUrl"
                       type="url"
                       value={formData?.cvUrl || ''}
                       onChange={(e) => handleInputChange('cvUrl', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                       placeholder="https://drive.google.com/file/d/your-cv-file-id/view"
                     />
                   </div>
@@ -367,6 +381,8 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <input
+                    id="profile-image-upload"
+                    name="profileImage"
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
@@ -426,11 +442,13 @@ export default function ProfilePage() {
                           
                           <div className="flex-1">
                             <input
+                              id={`social-${field.id}`}
+                              name={`social-${field.platform}`}
                               type="url"
                               value={field.url}
                               onChange={(e) => updateSocialMediaField(field.id, { url: e.target.value })}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-800 text-white'}`}
-                              placeholder={field.placeholder || 'Enter URL...'}
+                              placeholder={`${field.platform} URL`}
+                              className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                             />
                             {field.platform && (
                               <p className={`mt-1 text-xs ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>

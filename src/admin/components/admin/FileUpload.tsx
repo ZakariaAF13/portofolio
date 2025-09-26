@@ -79,8 +79,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       )}
 
       <div>
-        <label className="block">
+        <label htmlFor={`file-upload-${type}`} className="block">
           <input
+            id={`file-upload-${type}`}
+            name={`file-upload-${type}`}
             type="file"
             accept="image/*"
             onChange={uploadFile}

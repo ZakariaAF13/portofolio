@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics, Analytics } from "firebase/analytics";
+// import { getAnalytics, Analytics, isSupported } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
@@ -31,11 +31,9 @@ const auth = getAuth(app);
 // Initialize Storage
 const storage = getStorage(app);
 
-// Initialize Analytics (only in browser environment)
-let analytics: Analytics | undefined;
-if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
-}
+// Analytics disabled temporarily to avoid CSP eval issues
+// let analytics: Analytics | undefined;
+const analytics = undefined;
 
 export { app, db, auth, analytics, storage };
 export default app;

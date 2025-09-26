@@ -45,5 +45,18 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2"
-  }
+  },
+  "description": "1. **User Authentication**\r    - Secure login with JWT\r    - Protected routes\r    - Session management",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZakariaAF13/portofolio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZakariaAF13/portofolio/issues"
+  },
+  "homepage": "https://github.com/ZakariaAF13/portofolio#readme"
 }
