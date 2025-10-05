@@ -13,6 +13,10 @@ const projectSchema = z.object({
   image_url: z.string().optional(),
   demo_url: z.string().optional(),
   github_url: z.string().optional(),
+  instagram_reels_url: z.string().optional(),
+  tiktok_url: z.string().optional(),
+  category: z.string().optional(),
+  status: z.enum(['Published', 'Draft']).optional(),
   technologies: z.array(z.string()),
   is_featured: z.boolean(),
 });
@@ -39,6 +43,8 @@ export const ProjectsEditor: React.FC = () => {
     defaultValues: {
       technologies: [],
       is_featured: false,
+      category: 'General',
+      status: 'Published',
     },
   });
 
@@ -59,6 +65,10 @@ export const ProjectsEditor: React.FC = () => {
           imageUrl: data.image_url || undefined,
           liveUrl: (data as any).demo_url || undefined,
           githubUrl: (data as any).github_url || undefined,
+          instagramReelsUrl: (data as any).instagram_reels_url || undefined,
+          tiktokUrl: (data as any).tiktok_url || undefined,
+          category: (data as any).category || 'General',
+          status: (data as any).status || 'Published',
           technologies: data.technologies,
         };
         await updateProject(selectedProject.id, payload);
@@ -70,9 +80,11 @@ export const ProjectsEditor: React.FC = () => {
           imageUrl: data.image_url || undefined,
           liveUrl: (data as any).demo_url || undefined,
           githubUrl: (data as any).github_url || undefined,
+          instagramReelsUrl: (data as any).instagram_reels_url || undefined,
+          tiktokUrl: (data as any).tiktok_url || undefined,
           technologies: data.technologies,
-          category: 'General',
-          status: 'Published',
+          category: (data as any).category || 'General',
+          status: (data as any).status || 'Published',
           createdAt: new Date().toISOString().split('T')[0],
         } as Omit<Project, 'id'>;
         await addProject(newProject);
@@ -109,6 +121,10 @@ export const ProjectsEditor: React.FC = () => {
     setValue('image_url', (project as any).image_url || project.imageUrl || '');
     setValue('demo_url', (project as any).demo_url || (project as any).liveUrl || '');
     setValue('github_url', (project as any).github_url || project.githubUrl || '');
+    setValue('instagram_reels_url', (project as any).instagram_reels_url || (project as any).instagramReelsUrl || '');
+    setValue('tiktok_url', (project as any).tiktok_url || (project as any).tiktokUrl || '');
+    setValue('category', (project as any).category || 'General');
+    setValue('status', (project as any).status || 'Published');
     setValue('technologies', project.technologies || []);
     setValue('is_featured', (project as any).is_featured || false);
   };
@@ -281,7 +297,7 @@ export const ProjectsEditor: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Demo URL
+                    Project URL (Live)
                   </label>
                   <input
                     {...register('demo_url')}
@@ -301,6 +317,64 @@ export const ProjectsEditor: React.FC = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="https://github.com/username/repo"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Instagram Reels URL
+                  </label>
+                  <input
+                    {...register('instagram_reels_url')}
+                    type="url"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="https://www.instagram.com/reel/SHORTCODE/"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    TikTok URL
+                  </label>
+                  <input
+                    {...register('tiktok_url')}
+                    type="url"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="https://www.tiktok.com/@username/video/1234567890"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    {...register('category')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="General">General</option>
+                    <option value="TikTok">TikTok</option>
+                    <option value="Frontend">Frontend</option>
+                    <option value="Backend">Backend</option>
+                    <option value="Fullstack">Fullstack</option>
+                    <option value="UI/UX">UI/UX</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    {...register('status')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                  </select>
                 </div>
               </div>
 

@@ -12,6 +12,7 @@ export interface Project {
   liveUrl?: string;
   githubUrl?: string;
   tiktokUrl?: string;
+  instagramReelsUrl?: string;
 }
 
 export interface Skill {

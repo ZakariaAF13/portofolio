@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 import ScrollDownHint from './ScrollDownHint';
@@ -42,6 +42,12 @@ export default function Projects({ theme }: ProjectsProps) {
       }
     })();
   }, []);
+
+  // Extract Instagram Reels shortcode from URL
+  const extractInstagramReelCode = (url: string): string | null => {
+    const match = url.match(/\/reel\/([^\/?#]+)/);
+    return match ? match[1] : null;
+  };
 
   // Extract TikTok video ID from URL
   const extractTikTokVideoId = (url: string): string | null => {
@@ -107,30 +113,53 @@ export default function Projects({ theme }: ProjectsProps) {
             const content = (
               <>
                 {
-                  // Regular Project Display
+                  // Regular Project Display (supports IG Reels and TikTok embed when provided)
                   <>
-                    <div className="aspect-square flex items-center justify-center p-8 relative">
-                      {project.imageUrl ? (
-                        <img
-                          src={project.imageUrl}
-                          alt={project.title}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div
-                          className={`w-full h-full rounded-lg flex items-center justify-center text-2xl font-bold ${
-                            // Note: project.id is a string; remove modulo styling or keep a fallback static color
-                            'bg-blue-600 text-white'
-                          }`}
-                        >
-                          {project.title
-                            .split(' ')
-                            .map((word) => word[0])
-                            .join('')
-                            .slice(0, 2)}
+                    {project.instagramReelsUrl ? (
+                      <div className="w-full">
+                        <div className="relative aspect-[9/16] w-full max-w-sm mx-auto">
+                          <iframe
+                            src={`https://www.instagram.com/reel/${extractInstagramReelCode(project.instagramReelsUrl || '')}/embed`}
+                            className="absolute top-0 left-0 w-full h-full rounded-lg"
+                            frameBorder="0"
+                            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                          />
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : project.tiktokUrl ? (
+                      <div className="w-full">
+                        <div className="relative aspect-[9/16] w-full max-w-sm mx-auto">
+                          <iframe
+                            src={`https://www.tiktok.com/player/v1/${extractTikTokVideoId(project.tiktokUrl || '')}`}
+                            className="absolute top-0 left-0 w-full h-full rounded-lg"
+                            frameBorder="0"
+                            allow="autoplay; fullscreen"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="aspect-square flex items-center justify-center p-8 relative">
+                        {project.imageUrl ? (
+                          <img
+                            src={project.imageUrl}
+                            alt={project.title}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div
+                            className={`w-full h-full rounded-lg flex items-center justify-center text-2xl font-bold ${
+                              'bg-blue-600 text-white'
+                            }`}
+                          >
+                            {project.title
+                              .split(' ')
+                              .map((word) => word[0])
+                              .join('')
+                              .slice(0, 2)}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="p-4">
                       <div

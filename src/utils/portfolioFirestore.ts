@@ -400,6 +400,7 @@ export type PortfolioSettings = {
   linkedin_url?: string;
   github_url?: string;
   twitter_url?: string;
+  website_url?: string;
   // Admin: custom category order for Projects page (optional)
   categories_order?: string[];
 };

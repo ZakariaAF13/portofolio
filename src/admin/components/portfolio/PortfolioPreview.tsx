@@ -61,6 +61,17 @@ export const PortfolioPreview: React.FC = () => {
     tag.setAttribute('content', content);
   };
 
+  // Helpers: extract IDs from IG Reels / TikTok URLs
+  const extractInstagramReelCode = (url: string): string | null => {
+    const match = url.match(/\/reel\/([^\/?#]+)/);
+    return match ? match[1] : null;
+  };
+
+  const extractTikTokVideoId = (url: string): string | null => {
+    const match = url.match(/\/video\/(\d+)/);
+    return match ? match[1] : null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -170,7 +181,26 @@ export const PortfolioPreview: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {featuredProjects.map((project) => (
                   <div key={project.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                    {(project as any).image_url || (project as any).imageUrl ? (
+                    {/* Media: IG Reels -> TikTok -> Image */}
+                    {((project as any).instagramReelsUrl) ? (
+                      <div className="relative aspect-[9/16] w-full max-w-sm mx-auto">
+                        <iframe
+                          src={`https://www.instagram.com/reel/${extractInstagramReelCode((project as any).instagramReelsUrl || '')}/embed`}
+                          className="absolute top-0 left-0 w-full h-full rounded-lg"
+                          frameBorder="0"
+                          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                        />
+                      </div>
+                    ) : ((project as any).tiktokUrl) ? (
+                      <div className="relative aspect-[9/16] w-full max-w-sm mx-auto">
+                        <iframe
+                          src={`https://www.tiktok.com/player/v1/${extractTikTokVideoId((project as any).tiktokUrl || '')}`}
+                          className="absolute top-0 left-0 w-full h-full rounded-lg"
+                          frameBorder="0"
+                          allow="autoplay; fullscreen"
+                        />
+                      </div>
+                    ) : ((project as any).image_url || (project as any).imageUrl) ? (
                       <div className="aspect-video overflow-hidden">
                         <img
                           src={(project as any).image_url || (project as any).imageUrl}
@@ -203,7 +233,7 @@ export const PortfolioPreview: React.FC = () => {
                             className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
                           >
                             <ExternalLink className="h-4 w-4" />
-                            <span>Live Demo</span>
+                            <span>Live</span>
                           </a>
                         )}
                         {((project as any).github_url || (project as any).githubUrl) && (
@@ -232,15 +262,34 @@ export const PortfolioPreview: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {otherProjects.map((project) => (
                   <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                    {project.image_url && (
+                    {/* Media: IG Reels -> TikTok -> Image */}
+                    {((project as any).instagramReelsUrl) ? (
+                      <div className="relative aspect-[9/16] w-full max-w-sm mx-auto mt-4">
+                        <iframe
+                          src={`https://www.instagram.com/reel/${extractInstagramReelCode((project as any).instagramReelsUrl || '')}/embed`}
+                          className="absolute top-0 left-0 w-full h-full rounded-lg"
+                          frameBorder="0"
+                          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                        />
+                      </div>
+                    ) : ((project as any).tiktokUrl) ? (
+                      <div className="relative aspect-[9/16] w-full max-w-sm mx-auto mt-4">
+                        <iframe
+                          src={`https://www.tiktok.com/player/v1/${extractTikTokVideoId((project as any).tiktokUrl || '')}`}
+                          className="absolute top-0 left-0 w-full h-full rounded-lg"
+                          frameBorder="0"
+                          allow="autoplay; fullscreen"
+                        />
+                      </div>
+                    ) : ((project as any).image_url || (project as any).imageUrl) ? (
                       <div className="aspect-video overflow-hidden">
                         <img
-                          src={project.image_url}
+                          src={(project as any).image_url || (project as any).imageUrl}
                           alt={project.title}
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
                       </div>
-                    )}
+                    ) : null}
                     <div className="p-6">
                       <h4 className="text-lg font-bold text-gray-900 mb-2">{project.title}</h4>
                       <p className="text-gray-600 text-sm mb-4 line-clamp-3">{project.description}</p>
@@ -270,7 +319,7 @@ export const PortfolioPreview: React.FC = () => {
                             className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors duration-200"
                           >
                             <ExternalLink className="h-3 w-3" />
-                            <span>Demo</span>
+                            <span>Live</span>
                           </a>
                         )}
                         {((project as any).github_url || (project as any).githubUrl) && (
@@ -281,7 +330,7 @@ export const PortfolioPreview: React.FC = () => {
                             className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm rounded transition-colors duration-200"
                           >
                             <Github className="h-3 w-3" />
-                            <span>Code</span>
+                            <span>GitHub</span>
                           </a>
                         )}
                       </div>

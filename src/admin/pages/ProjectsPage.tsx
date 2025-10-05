@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload, FiMove, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
@@ -25,6 +25,7 @@ export default function ProjectsPage() {
     technologies: '',
     imageUrl: '',
     tiktokUrl: '',
+    instagramReelsUrl: '',
     liveUrl: '',
   });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -56,6 +57,8 @@ export default function ProjectsPage() {
   // Keep a stable global order list of project IDs to prevent stacking/duplication issues
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
   // Drag UI removed; using table with up/down buttons instead
+
+  // Note: category order management still handled in Move modal via Firestore, but unused badges are removed.
 
   const openMoveModal = async () => {
     // Load settings for categories order (if exists)
@@ -144,6 +147,7 @@ export default function ProjectsPage() {
         technologies: project.technologies?.join(', ') || '',
         imageUrl: project.imageUrl || '',
         tiktokUrl: project.tiktokUrl || '',
+        instagramReelsUrl: (project as any).instagramReelsUrl || '',
         liveUrl: project.liveUrl || '',
       });
       setPreviewImage(project.imageUrl || null);
@@ -158,6 +162,7 @@ export default function ProjectsPage() {
         technologies: '',
         imageUrl: '',
         tiktokUrl: '',
+        instagramReelsUrl: '',
         liveUrl: '',
       });
       setPreviewImage(null);
@@ -177,6 +182,7 @@ export default function ProjectsPage() {
       technologies: '',
       imageUrl: '',
       tiktokUrl: '',
+      instagramReelsUrl: '',
       liveUrl: '',
     });
     setPreviewImage(null);
@@ -259,7 +265,8 @@ export default function ProjectsPage() {
           technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
           imageUrl: formData.imageUrl,
           tiktokUrl: normalizedTikTokUrl,
-          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
+          instagramReelsUrl: formData.instagramReelsUrl || undefined,
+          liveUrl: formData.liveUrl || undefined,
         });
         showSuccessModal('Project Updated!', `"${formData.title}" has been updated successfully.`);
       } else {
@@ -271,7 +278,8 @@ export default function ProjectsPage() {
           technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
           imageUrl: formData.imageUrl,
           tiktokUrl: normalizedTikTokUrl,
-          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
+          instagramReelsUrl: formData.instagramReelsUrl || undefined,
+          liveUrl: formData.liveUrl || undefined,
           createdAt: new Date().toISOString().split('T')[0],
         });
         showSuccessModal('Project Added!', `"${formData.title}" has been added successfully.`);
@@ -378,6 +386,7 @@ export default function ProjectsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
+            
           </div>
           <div className="overflow-x-auto">
             <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -480,25 +489,14 @@ export default function ProjectsPage() {
                         className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                       >
                         <option value="">Select Category</option>
-                        {/* Default categories */}
-                        <option value="Web Development">Web Development</option>
-                        <option value="Mobile App">Mobile App</option>
-                        <option value="Desktop App">Desktop App</option>
-                        <option value="UI/UX Design">UI/UX Design</option>
-                        <option value="TikTok">TikTok</option>
-                        {/* Dynamic categories from existing projects */}
                         {Array.from(new Set(projects.map(p => p.category)))
-                          .filter(category => 
-                            category && 
-                            !['Web Development', 'Mobile App', 'Desktop App', 'UI/UX Design', 'TikTok'].includes(category)
-                          )
+                          .filter((c): c is string => !!c && c !== 'Other')
                           .sort()
                           .map(category => (
                             <option key={category} value={category}>
                               {category}
                             </option>
-                          ))
-                        }
+                          ))}
                         <option value="Other">Other</option>
                       </select>
                     </div>
@@ -559,42 +557,52 @@ export default function ProjectsPage() {
                       />
                     </div>
 
-                    {formData.category !== 'TikTok' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Project URL (Live)
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.liveUrl}
+                        onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        placeholder="https://your-live-site.com"
+                      />
+                    </div>
+
+                    {formData.category === 'Other' && (
                       <>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Project URL (Live)
+                            TikTok URL
                           </label>
                           <input
                             type="url"
-                            value={formData.liveUrl}
-                            onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                            value={formData.tiktokUrl}
+                            onChange={(e) => setFormData({ ...formData, tiktokUrl: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                            placeholder="https://your-live-site.com"
+                            placeholder="https://www.tiktok.com/@username/video/1234567890"
                           />
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Masukkan URL video TikTok penuh untuk di-embed
+                          </p>
                         </div>
-
-
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Instagram Reels URL
+                          </label>
+                          <input
+                            type="url"
+                            value={formData.instagramReelsUrl}
+                            onChange={(e) => setFormData({ ...formData, instagramReelsUrl: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                            placeholder="https://www.instagram.com/reel/SHORTCODE/"
+                          />
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Masukkan URL Reels Instagram (format reel/SHORTCODE)
+                          </p>
+                        </div>
                       </>
-                    )}
-
-                    {formData.category === 'TikTok' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          TikTok URL
-                        </label>
-                        <input
-                          type="url"
-                          value={formData.tiktokUrl}
-                          onChange={(e) => setFormData({ ...formData, tiktokUrl: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                          placeholder="https://www.tiktok.com/@username/video/1234567890"
-                          required={formData.category === 'TikTok'}
-                        />
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          Enter the full TikTok video URL for embedding
-                        </p>
-                      </div>
                     )}
 
                     <div>
