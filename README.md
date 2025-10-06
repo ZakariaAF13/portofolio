@@ -114,7 +114,7 @@ Berikut tampilan halaman aplikasi (public) dan dashboard admin. Simpan file gamb
 
 - Halaman About
 
-  ![alt text](ss/image-1.png)
+  ![alt text](ss/image1.png)
 
 - Halaman Contact
 
@@ -132,7 +132,7 @@ Berikut tampilan halaman aplikasi (public) dan dashboard admin. Simpan file gamb
 
 - Manajemen Projects
 
-  ![alt text](ss/image5.png)
+  ![alt text](ss/image.png)
 
 - Manajemen Resume (Skills, Experience, Education, Knowledge)
 
