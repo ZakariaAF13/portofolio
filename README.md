@@ -110,7 +110,7 @@ Berikut tampilan halaman aplikasi (public) dan dashboard admin. Simpan file gamb
 
 - Halaman Resume
 
- ![alt text](ss/image.png)
+ ![alt text](ss/rsm.png)
 
 - Halaman About
 
