@@ -794,8 +794,8 @@ export default function ProjectsPage() {
                         : allOrdered.filter(p => p.category === activeMoveCategory);
 
                       return (
-                        <div className="overflow-x-auto">
-                          <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                        <div className="overflow-x-auto overflow-y-auto h-[480px]">
+                          <table className="w-full text-sm text-left" style={{ '--table-row-height': '3rem' }}>
                             <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
                               <tr>
                                 <th className="px-4 py-2 w-16">Order</th>
@@ -806,29 +806,29 @@ export default function ProjectsPage() {
                             </thead>
                             <tbody>
                               {visibleProjects.map((p, idx) => (
-                                <tr key={p.id} className={`${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                                <tr key={p.id} className={`h-[3rem] ${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
                                   <td className="px-4 py-2">{idx + 1}</td>
                                   <td className={`px-4 py-2 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{p.title}</td>
                                   <td className="px-4 py-2">{p.category}</td>
                                   <td className="px-4 py-2">
                                     <div className="flex items-center justify-end gap-2">
-                                      <button
-                                        onClick={() => moveProjectInView(p.id, 'up')}
-                                        disabled={idx === 0}
-                                        className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
-                                        title="Move Up"
-                                      >
-                                        <FiArrowUp />
-                                      </button>
-                                      <button
-                                        onClick={() => moveProjectInView(p.id, 'down')}
-                                        disabled={idx === visibleProjects.length - 1}
-                                        className={`p-2 rounded border ${idx === visibleProjects.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
-                                        title="Move Down"
-                                      >
-                                        <FiArrowDown />
-                                      </button>
-                                    </div>
+                                    <button
+                                      onClick={() => moveProjectInView(p.id, 'up')}
+                                      disabled={idx === 0}
+                                      className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
+                                      title="Move Up"
+                                    >
+                                      <FiArrowUp />
+                                    </button>
+                                    <button
+                                      onClick={() => moveProjectInView(p.id, 'down')}
+                                      disabled={idx === visibleProjects.length - 1}
+                                      className={`p-2 rounded border ${idx === visibleProjects.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
+                                      title="Move Down"
+                                    >
+                                      <FiArrowDown />
+                                    </button>
+                                  </div>
                                   </td>
                                 </tr>
                               ))}

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FiSave, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiCamera, FiUpload, FiPlus, FiTrash2, FiEdit3, FiDownload } from 'react-icons/fi';
+import { FiSave, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiCamera, FiUpload, FiPlus, FiTrash2, FiEdit3, FiDownload, FiMove, FiArrowUp, FiArrowDown, FiX } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
@@ -33,6 +33,32 @@ export default function ProfilePage() {
     message: '',
     type: 'success' as 'success' | 'info' | 'warning'
   });
+
+  // Move modal state for Social Media Links
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [socialOrder, setSocialOrder] = useState<string[]>([]);
+
+  const openMoveModal = () => {
+    const ids = (socialMediaFields || []).map(f => f.id);
+    setSocialOrder(ids);
+    setIsMoveOpen(true);
+  };
+  const closeMoveModal = () => setIsMoveOpen(false);
+
+  const moveInArray = <T,>(arr: T[], index: number, direction: 'up' | 'down'): T[] => {
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= arr.length) return arr;
+    const copy = [...arr];
+    const tmp = copy[index];
+    copy[index] = copy[target];
+    copy[target] = tmp;
+    return copy;
+  };
+  const moveSocialItem = (id: string, dir: 'up' | 'down') => {
+    const idx = socialOrder.indexOf(id);
+    if (idx === -1) return;
+    setSocialOrder(prev => moveInArray(prev, idx, dir));
+  };
 
   // Show loading state if profile is not loaded yet
   if (!profile) {
@@ -408,14 +434,25 @@ export default function ProfilePage() {
                 <div className={`border-t pt-6 ${isLightMode ? 'border-gray-200' : 'border-slate-600'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Social Media Links</h3>
-                    <button
-                      type="button"
-                      onClick={addSocialMediaField}
-                      className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
-                    >
-                      <FiPlus className="w-4 h-4" />
-                      Add Platform
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={openMoveModal}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+                        title="Reorder Social Media Links"
+                      >
+                        <FiMove className="w-4 h-4" />
+                        Move
+                      </button>
+                      <button
+                        type="button"
+                        onClick={addSocialMediaField}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <FiPlus className="w-4 h-4" />
+                        Add Platform
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -672,6 +709,82 @@ export default function ProfilePage() {
         message={successModal.message}
         type={successModal.type}
       />
+
+      {/* Move Social Media Links Modal */}
+      {isMoveOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={closeMoveModal}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className={`rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className={`text-xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Move Social Media Links</h2>
+                <button onClick={closeMoveModal} className={`${isLightMode ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 hover:text-gray-100'}`}>
+                  <FiX size={22} />
+                </button>
+              </div>
+
+              <div className="overflow-x-auto overflow-y-auto h-[480px]">
+                <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                  <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
+                    <tr>
+                      <th className="px-4 py-2 w-16">Order</th>
+                      <th className="px-4 py-2">Platform</th>
+                      <th className="px-4 py-2">URL</th>
+                      <th className="px-4 py-2 text-right">Move</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {socialOrder.map((id, idx) => {
+                      const item = socialMediaFields.find(f => f.id === id);
+                      if (!item) return null;
+                      return (
+                        <tr key={id} className={`h-[3rem] ${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                          <td className="px-4 py-2">{idx + 1}</td>
+                          <td className={`${isLightMode ? 'text-gray-900' : 'text-white'} px-4 py-2`}>{item.platform || item.icon}</td>
+                          <td className="px-4 py-2 truncate max-w-[320px]">{item.url || '-'}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => moveSocialItem(id, 'up')} disabled={idx === 0} className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Up">
+                                <FiArrowUp />
+                              </button>
+                              <button onClick={() => moveSocialItem(id, 'down')} disabled={idx === socialOrder.length - 1} className={`p-2 rounded border ${idx === socialOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Down">
+                                <FiArrowDown />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex gap-3 pt-6">
+                <button
+                  onClick={() => {
+                    // Apply new order to local state; persist when user saves profile
+                    const ordered = socialOrder
+                      .map(id => socialMediaFields.find(f => f.id === id))
+                      .filter((x): x is SocialMediaField => Boolean(x));
+                    setSocialMediaFields(ordered);
+                    setIsMoveOpen(false);
+                    showSuccessModal('Order Updated', 'Social media links order changed. Click Save Changes to persist.');
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Save Move
+                </button>
+                <button onClick={closeMoveModal} className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors">Cancel</button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

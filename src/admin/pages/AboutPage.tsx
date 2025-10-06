@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FiSave, FiUser, FiPlus, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
+import { FiSave, FiUser, FiPlus, FiEdit2, FiTrash2, FiX, FiMove, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { 
   Code, Palette, Database, Smartphone, Monitor, Globe, Zap, Layers,
   Briefcase, Settings, Heart, Star, Target, Award, BookOpen, Coffee,
@@ -224,7 +224,7 @@ const backgroundOptions = [
 ];
 
 export default function AboutPage() {
-  const { profile, updateProfile, whatIDoItems, addWhatIDoItem, updateWhatIDoItem, deleteWhatIDoItem } = useFirebaseData();
+  const { profile, updateProfile, whatIDoItems, addWhatIDoItem, updateWhatIDoItem, deleteWhatIDoItem, refreshData } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isWhatIDoModalOpen, setIsWhatIDoModalOpen] = useState(false);
@@ -244,6 +244,40 @@ export default function AboutPage() {
     message: '',
     type: 'success' as 'success' | 'info' | 'warning'
   });
+
+  // Move modal state for What I Do
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [whatIDoOrder, setWhatIDoOrder] = useState<string[]>([]);
+
+  const openMoveModal = () => {
+    // Sort by order_index asc then createdAt desc to initialize
+    const sorted = [...whatIDoItems].sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+    setWhatIDoOrder(sorted.map(i => i.id));
+    setIsMoveOpen(true);
+  };
+
+  const closeMoveModal = () => setIsMoveOpen(false);
+
+  const moveInArray = <T,>(arr: T[], index: number, direction: 'up' | 'down'): T[] => {
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= arr.length) return arr;
+    const copy = [...arr];
+    const tmp = copy[index];
+    copy[index] = copy[target];
+    copy[target] = tmp;
+    return copy;
+  };
+
+  const moveWhatIDo = (id: string, dir: 'up' | 'down') => {
+    const idx = whatIDoOrder.indexOf(id);
+    if (idx === -1) return;
+    setWhatIDoOrder(prev => moveInArray(prev, idx, dir));
+  };
 
   const [formData, setFormData] = useState({
     bio: profile?.bio || '',
@@ -436,13 +470,23 @@ export default function AboutPage() {
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>What I Do</h3>
-                  <button
-                    onClick={() => setIsWhatIDoModalOpen(true)}
-                    className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <FiPlus className="mr-2" size={14} />
-                    Add Item
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={openMoveModal}
+                      className="inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                      title="Reorder What I Do"
+                    >
+                      <FiMove className="mr-2" size={14} />
+                      Move
+                    </button>
+                    <button
+                      onClick={() => setIsWhatIDoModalOpen(true)}
+                      className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <FiPlus className="mr-2" size={14} />
+                      Add Item
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -663,6 +707,86 @@ export default function AboutPage() {
           message={successModal.message}
           type={successModal.type}
         />
+
+        {/* Move What I Do Modal */}
+        {isMoveOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={closeMoveModal}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className={`text-xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Move What I Do</h2>
+                  <button onClick={closeMoveModal} className={`${isLightMode ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 hover:text-gray-100'}`}>
+                    <FiX size={22} />
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto overflow-y-auto h-[480px]">
+                  <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                    <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
+                      <tr>
+                        <th className="px-4 py-2 w-16">Order</th>
+                        <th className="px-4 py-2">Title</th>
+                        <th className="px-4 py-2">Icon</th>
+                        <th className="px-4 py-2 text-right">Move</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {whatIDoOrder.map((id, idx) => {
+                        const item = whatIDoItems.find(x => x.id === id);
+                        if (!item) return null;
+                        return (
+                          <tr key={id} className={`h-[3rem] ${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                            <td className="px-4 py-2">{idx + 1}</td>
+                            <td className={`${isLightMode ? 'text-gray-900' : 'text-white'} px-4 py-2`}>{item.title}</td>
+                            <td className="px-4 py-2">{item.icon}</td>
+                            <td className="px-4 py-2">
+                              <div className="flex items-center justify-end gap-2">
+                                <button onClick={() => moveWhatIDo(id, 'up')} disabled={idx === 0} className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Up">
+                                  <FiArrowUp />
+                                </button>
+                                <button onClick={() => moveWhatIDo(id, 'down')} disabled={idx === whatIDoOrder.length - 1} className={`p-2 rounded border ${idx === whatIDoOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Down">
+                                  <FiArrowDown />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex gap-3 pt-6">
+                  <button
+                    onClick={async () => {
+                      try {
+                        for (let i = 0; i < whatIDoOrder.length; i++) {
+                          await updateWhatIDoItem(whatIDoOrder[i], { order_index: i });
+                        }
+                        await refreshData();
+                        setIsMoveOpen(false);
+                        setTimeout(() => showSuccessModal('Move Saved', 'What I Do item positions have been updated.'), 0);
+                      } catch (err) {
+                        console.error('Error saving What I Do order:', err);
+                        showSuccessModal('Error', 'Failed to save new positions. Please try again.', 'warning');
+                      }
+                    }}
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Save Move
+                  </button>
+                  <button onClick={closeMoveModal} className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors">Cancel</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { FiPlus, FiEdit, FiTrash, FiSearch, FiX } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiMove, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Skill, Experience, Education } from '../types';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
+import { updateKnowledgeInFirestore } from '../../utils/portfolioFirestore';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import SuccessModal from '../components/SuccessModal';
 
 export default function ResumePage() {
   const { isLightMode } = useAdminTheme();
-  const { skills, addSkill, updateSkill, deleteSkill, knowledge, addKnowledge, updateKnowledge, deleteKnowledge, experiences, addExperience, updateExperience, deleteExperience, educations, addEducation, updateEducation, deleteEducation } = useFirebaseData();
+  const { skills, addSkill, updateSkill, deleteSkill, knowledge, addKnowledge, updateKnowledge, deleteKnowledge, experiences, addExperience, updateExperience, deleteExperience, educations, addEducation, updateEducation, deleteEducation, refreshData } = useFirebaseData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
@@ -62,6 +63,75 @@ export default function ResumePage() {
     message: '',
     type: 'success' as 'success' | 'info' | 'warning'
   });
+
+  // Move modal state
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [activeMoveSection, setActiveMoveSection] = useState<'skills' | 'experiences' | 'educations' | 'knowledge'>('skills');
+  const [skillsOrder, setSkillsOrder] = useState<string[]>([]);
+  const [experiencesOrder, setExperiencesOrder] = useState<string[]>([]);
+  const [educationsOrder, setEducationsOrder] = useState<string[]>([]);
+  const [knowledgeOrder, setKnowledgeOrder] = useState<string[]>([]);
+
+  const openMoveModal = () => {
+    // Build initial order arrays: sort by order_index asc then createdAt desc
+    const skillSorted = [...skills].sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+    const expSorted = [...experiences].sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+    const eduSorted = [...educations].sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+    setSkillsOrder(skillSorted.map(s => s.id));
+    setExperiencesOrder(expSorted.map(e => e.id));
+    setEducationsOrder(eduSorted.map(e => e.id));
+    setKnowledgeOrder([...knowledge]);
+    setActiveMoveSection('skills');
+    setIsMoveOpen(true);
+  };
+
+  const closeMoveModal = () => {
+    setIsMoveOpen(false);
+  };
+
+  const moveInArray = <T,>(arr: T[], index: number, direction: 'up' | 'down'): T[] => {
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= arr.length) return arr;
+    const copy = [...arr];
+    const tmp = copy[index];
+    copy[index] = copy[target];
+    copy[target] = tmp;
+    return copy;
+  };
+
+  const moveSkill = (id: string, dir: 'up' | 'down') => {
+    const idx = skillsOrder.indexOf(id);
+    if (idx === -1) return;
+    setSkillsOrder(prev => moveInArray(prev, idx, dir));
+  };
+  const moveExperience = (id: string, dir: 'up' | 'down') => {
+    const idx = experiencesOrder.indexOf(id);
+    if (idx === -1) return;
+    setExperiencesOrder(prev => moveInArray(prev, idx, dir));
+  };
+  const moveEducation = (id: string, dir: 'up' | 'down') => {
+    const idx = educationsOrder.indexOf(id);
+    if (idx === -1) return;
+    setEducationsOrder(prev => moveInArray(prev, idx, dir));
+  };
+  const moveKnowledge = (index: number, dir: 'up' | 'down') => {
+    setKnowledgeOrder(prev => moveInArray(prev, index, dir));
+  };
 
   const filteredSkills = skills.filter(skill =>
     skill.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -216,13 +286,23 @@ export default function ResumePage() {
             <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Resume</h1>
             <p className={`mt-1 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your technical skills, expertise, experiences, and education.</p>
           </div>
-          <button 
-            onClick={() => openModal()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <FiPlus />
-            <span>Add Skill</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={openMoveModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              title="Reorder Skills, Experience, Education, Knowledge"
+            >
+              <FiMove />
+              <span>Move</span>
+            </button>
+            <button 
+              onClick={() => openModal()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FiPlus />
+              <span>Add Skill</span>
+            </button>
+          </div>
         </div>
 
         <div className={`rounded-xl shadow-sm ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}>
@@ -564,6 +644,236 @@ export default function ResumePage() {
                       </button>
                     </div>
                   </form>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Move/Reorder Modal */}
+        <AnimatePresence>
+          {isMoveOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+              onClick={closeMoveModal}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className={`rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className={`text-xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Move Resume Items</h2>
+                    <button onClick={closeMoveModal} className={`${isLightMode ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 hover:text-gray-100'}`}>
+                      <FiX size={22} />
+                    </button>
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex items-center gap-2 mb-6 flex-wrap">
+                    {(['skills','experiences','educations','knowledge'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveMoveSection(tab)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${activeMoveSection === tab ? 'bg-blue-600 text-white border-blue-600' : (isLightMode ? 'text-gray-700 border-gray-300' : 'text-gray-300 border-slate-600')}`}
+                      >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Lists */}
+                  {activeMoveSection === 'skills' && (
+                    <div className="overflow-x-auto overflow-y-auto h-[480px]">
+                      <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                        <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
+                          <tr>
+                            <th className="px-4 py-2 w-16">Order</th>
+                            <th className="px-4 py-2">Name</th>
+                            <th className="px-4 py-2">Category</th>
+                            <th className="px-4 py-2 text-right">Move</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {skillsOrder.map((id, idx) => {
+                            const s = skills.find(x => x.id === id);
+                            if (!s) return null;
+                            return (
+                              <tr key={id} className={`h-[3rem] ${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                                <td className="px-4 py-2">{idx + 1}</td>
+                                <td className={`${isLightMode ? 'text-gray-900' : 'text-white'} px-4 py-2`}>{s.name}</td>
+                                <td className="px-4 py-2">{s.category}</td>
+                                <td className="px-4 py-2">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button onClick={() => moveSkill(id, 'up')} disabled={idx === 0} className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Up">
+                                      <FiArrowUp />
+                                    </button>
+                                    <button onClick={() => moveSkill(id, 'down')} disabled={idx === skillsOrder.length - 1} className={`p-2 rounded border ${idx === skillsOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Down">
+                                      <FiArrowDown />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {activeMoveSection === 'experiences' && (
+                    <div className="overflow-x-auto overflow-y-auto h-[480px]">
+                      <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                        <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
+                          <tr>
+                            <th className="px-4 py-2 w-16">Order</th>
+                            <th className="px-4 py-2">Title</th>
+                            <th className="px-4 py-2">Company</th>
+                            <th className="px-4 py-2 text-right">Move</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {experiencesOrder.map((id, idx) => {
+                            const e = experiences.find(x => x.id === id);
+                            if (!e) return null;
+                            return (
+                              <tr key={id} className={`h-[3rem] ${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                                <td className="px-4 py-2">{idx + 1}</td>
+                                <td className={`${isLightMode ? 'text-gray-900' : 'text-white'} px-4 py-2`}>{e.title}</td>
+                                <td className="px-4 py-2">{e.company}</td>
+                                <td className="px-4 py-2">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button onClick={() => moveExperience(id, 'up')} disabled={idx === 0} className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Up">
+                                      <FiArrowUp />
+                                    </button>
+                                    <button onClick={() => moveExperience(id, 'down')} disabled={idx === experiencesOrder.length - 1} className={`p-2 rounded border ${idx === experiencesOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Down">
+                                      <FiArrowDown />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {activeMoveSection === 'educations' && (
+                    <div className="overflow-x-auto overflow-y-auto h-[480px]">
+                      <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                        <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
+                          <tr>
+                            <th className="px-4 py-2 w-16">Order</th>
+                            <th className="px-4 py-2">Degree</th>
+                            <th className="px-4 py-2">Institution</th>
+                            <th className="px-4 py-2 text-right">Move</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {educationsOrder.map((id, idx) => {
+                            const e = educations.find(x => x.id === id);
+                            if (!e) return null;
+                            return (
+                              <tr key={id} className={`h-[3rem] ${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                                <td className="px-4 py-2">{idx + 1}</td>
+                                <td className={`${isLightMode ? 'text-gray-900' : 'text-white'} px-4 py-2`}>{e.degree}</td>
+                                <td className="px-4 py-2">{e.institution}</td>
+                                <td className="px-4 py-2">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button onClick={() => moveEducation(id, 'up')} disabled={idx === 0} className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Up">
+                                      <FiArrowUp />
+                                    </button>
+                                    <button onClick={() => moveEducation(id, 'down')} disabled={idx === educationsOrder.length - 1} className={`p-2 rounded border ${idx === educationsOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Down">
+                                      <FiArrowDown />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {activeMoveSection === 'knowledge' && (
+                    <div className="overflow-x-auto overflow-y-auto h-[480px]">
+                      <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                        <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
+                          <tr>
+                            <th className="px-4 py-2 w-16">Order</th>
+                            <th className="px-4 py-2">Label</th>
+                            <th className="px-4 py-2 text-right">Move</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {knowledgeOrder.map((label, idx) => (
+                            <tr key={`${label}-${idx}`} className={`h-[3rem] ${isLightMode ? 'bg-white border-b border-gray-200' : 'bg-slate-800 border-b border-slate-700'}`}>
+                              <td className="px-4 py-2">{idx + 1}</td>
+                              <td className={`${isLightMode ? 'text-gray-900' : 'text-white'} px-4 py-2`}>{label}</td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button onClick={() => moveKnowledge(idx, 'up')} disabled={idx === 0} className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Up">
+                                    <FiArrowUp />
+                                  </button>
+                                  <button onClick={() => moveKnowledge(idx, 'down')} disabled={idx === knowledgeOrder.length - 1} className={`p-2 rounded border ${idx === knowledgeOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`} title="Move Down">
+                                    <FiArrowDown />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-6">
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Persist order indexes sequentially
+                          for (let i = 0; i < skillsOrder.length; i++) {
+                            await updateSkill(skillsOrder[i], { order_index: i });
+                          }
+                          for (let i = 0; i < experiencesOrder.length; i++) {
+                            await updateExperience(experiencesOrder[i], { order_index: i });
+                          }
+                          for (let i = 0; i < educationsOrder.length; i++) {
+                            await updateEducation(educationsOrder[i], { order_index: i });
+                          }
+                          // Knowledge as array order
+                          await updateKnowledgeInFirestore(knowledgeOrder);
+                          // Also update local state via context helper to keep in sync
+                          // Using context's setter through updateKnowledge of provider API by replacing list
+                          // But provider exposes updateKnowledge(index, item). We'll call firestore directly above and then refreshData.
+                          await refreshData();
+                          showSuccessModal('Move Saved', 'Resume item positions have been updated.');
+                          closeMoveModal();
+                        } catch (err) {
+                          console.error('Error saving resume order:', err);
+                          showSuccessModal('Error', 'Failed to save new positions. Please try again.', 'warning');
+                        }
+                      }}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Save Move
+                    </button>
+                    <button
+                      onClick={closeMoveModal}
+                      className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>

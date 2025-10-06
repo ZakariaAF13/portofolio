@@ -147,6 +147,13 @@ export async function getSkillsFromFirestore(): Promise<Skill[]> {
     querySnapshot.forEach((docSnap) => {
       skills.push({ ...(docSnap.data() as Omit<Skill, 'id'>), id: docSnap.id });
     });
+    // Client-side sort: prioritize manual order_index (asc), fallback to createdAt desc
+    skills.sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
     return skills;
   } catch (error) {
     console.error("Error getting skills:", error);
@@ -223,6 +230,13 @@ export async function getWhatIDoItemsFromFirestore(): Promise<WhatIDoItem[]> {
     const items: WhatIDoItem[] = [];
     querySnapshot.forEach((docSnap) => {
       items.push({ ...(docSnap.data() as Omit<WhatIDoItem, 'id'>), id: docSnap.id });
+    });
+    // Client-side sort: prioritize manual order_index (asc), fallback to createdAt desc
+    items.sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
     });
     return items;
   } catch (error) {
@@ -301,6 +315,13 @@ export async function getExperiencesFromFirestore(): Promise<Experience[]> {
     querySnapshot.forEach((docSnap) => {
       experiences.push({ ...(docSnap.data() as Omit<Experience, 'id'>), id: docSnap.id });
     });
+    // Client-side sort: prioritize manual order_index (asc), fallback to createdAt desc
+    experiences.sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
     return experiences;
   } catch (error) {
     console.error("Error getting experiences:", error);
@@ -352,6 +373,13 @@ export async function getEducationsFromFirestore(): Promise<Education[]> {
     const educations: Education[] = [];
     querySnapshot.forEach((docSnap) => {
       educations.push({ ...(docSnap.data() as Omit<Education, 'id'>), id: docSnap.id });
+    });
+    // Client-side sort: prioritize manual order_index (asc), fallback to createdAt desc
+    educations.sort((a, b) => {
+      const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
+      const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
     });
     return educations;
   } catch (error) {

@@ -22,6 +22,8 @@ export interface Skill {
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   percentage: number;
   createdAt: string;
+  // Optional manual sort index (lower comes first)
+  order_index?: number;
 }
 
 export interface SocialMediaField {
@@ -67,6 +69,8 @@ export interface WhatIDoItem {
   iconColor: string;
   backgroundColor: string;
   createdAt: string;
+  // Optional manual sort index (lower comes first)
+  order_index?: number;
 }
 
 export interface Experience {
@@ -77,6 +81,8 @@ export interface Experience {
   location: string;
   description: string;
   createdAt: string;
+  // Optional manual sort index (lower comes first)
+  order_index?: number;
 }
 
 export interface Education {
@@ -86,5 +92,7 @@ export interface Education {
   period: string;
   location: string;
   createdAt: string;
+  // Optional manual sort index (lower comes first)
+  order_index?: number;
 }
 
