@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
@@ -11,8 +12,17 @@ interface ProjectsProps {
 export default function Projects({ theme }: ProjectsProps) {
   const { projects } = useFirebaseData();
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const sectionRef = useRef<HTMLElement>(null);
   const [categoriesOrder, setCategoriesOrder] = useState<string[]>([]);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [expandedDesc, setExpandedDesc] = useState<Record<string, boolean>>({});
+
+  const isExpanded = (id: string) => !!expandedDesc[id];
+  const toggleExpanded = (id: string) => setExpandedDesc(prev => ({ ...prev, [id]: !prev[id] }));
+  const truncateWords = (text: string, limit = 6) => {
+    const words = text.trim().split(/\s+/);
+    if (words.length <= limit) return text;
+    return words.slice(0, limit).join(' ') + '...';
+  };
 
   // Load TikTok embed script
   useEffect(() => {
@@ -43,19 +53,18 @@ export default function Projects({ theme }: ProjectsProps) {
     })();
   }, []);
 
-  // Extract Instagram Reels shortcode from URL
-  const extractInstagramReelCode = (url: string): string | null => {
-    const match = url.match(/\/reel\/([^\/?#]+)/);
-    return match ? match[1] : null;
-  };
-
   // Extract TikTok video ID from URL
   const extractTikTokVideoId = (url: string): string | null => {
     const match = url.match(/\/video\/(\d+)/);
     return match ? match[1] : null;
   };
 
-  // Compute categories honoring settings order: 'all' first, then ordered list, then the rest
+  // Extract Instagram Reels shortcode from URL
+  const extractInstagramReelCode = (url: string): string | null => {
+    const match = url.match(/\/reel\/([^/?#]+)/);
+    return match ? match[1] : null;
+  };
+
   const allCats = Array.from(new Set(projects.map(p => p.category))).filter(Boolean);
   const orderedCats = [
     ...categoriesOrder.filter(c => allCats.includes(c)),
@@ -113,7 +122,7 @@ export default function Projects({ theme }: ProjectsProps) {
             const content = (
               <>
                 {
-                  // Regular Project Display (supports IG Reels and TikTok embed when provided)
+                  // Regular Project Display (now supports Instagram Reels and TikTok embed when provided)
                   <>
                     {project.instagramReelsUrl ? (
                       <div className="w-full">
@@ -160,7 +169,6 @@ export default function Projects({ theme }: ProjectsProps) {
                         )}
                       </div>
                     )}
-
                     <div className="p-4">
                       <div
                         className={`text-sm mb-1 ${
@@ -178,11 +186,15 @@ export default function Projects({ theme }: ProjectsProps) {
                       </h3>
                       {project.description && (
                         <p
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleExpanded(project.id); }}
                           className={`text-sm mt-2 ${
                             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                          }`}
+                          } cursor-pointer select-none`}
+                          title={isExpanded(project.id) ? 'Click to collapse' : 'Click to read more'}
                         >
-                          {project.description}
+                          {isExpanded(project.id)
+                            ? project.description
+                            : truncateWords(project.description)}
                         </p>
                       )}
                     </div>
@@ -235,8 +247,14 @@ export default function Projects({ theme }: ProjectsProps) {
                     {project.title}
                   </h3>
                   {project.description && (
-                    <p className={`text-sm mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {project.description}
+                    <p
+                      onClick={() => toggleExpanded(project.id)}
+                      className={`text-sm mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} cursor-pointer select-none`}
+                      title={isExpanded(project.id) ? 'Click to collapse' : 'Click to read more'}
+                    >
+                      {isExpanded(project.id)
+                        ? project.description
+                        : truncateWords(project.description)}
                     </p>
                   )}
                 </div>
