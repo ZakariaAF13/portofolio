@@ -72,7 +72,7 @@ export default function ResumePage() {
   const [educationsOrder, setEducationsOrder] = useState<string[]>([]);
   const [knowledgeOrder, setKnowledgeOrder] = useState<string[]>([]);
 
-  const openMoveModal = () => {
+  const openMoveModal = (section?: 'skills' | 'experiences' | 'educations' | 'knowledge') => {
     // Build initial order arrays: sort by order_index asc then createdAt desc
     const skillSorted = [...skills].sort((a, b) => {
       const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
@@ -96,7 +96,7 @@ export default function ResumePage() {
     setExperiencesOrder(expSorted.map(e => e.id));
     setEducationsOrder(eduSorted.map(e => e.id));
     setKnowledgeOrder([...knowledge]);
-    setActiveMoveSection('skills');
+    setActiveMoveSection(section ?? 'skills');
     setIsMoveOpen(true);
   };
 
@@ -288,7 +288,7 @@ export default function ResumePage() {
           </div>
           <div className="flex items-center gap-3">
             <button 
-              onClick={openMoveModal}
+              onClick={() => openMoveModal()}
               className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               title="Reorder Skills, Experience, Education, Knowledge"
             >
@@ -383,17 +383,27 @@ export default function ResumePage() {
               <h2 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Experience</h2>
               <p className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Manage your work experience entries.</p>
             </div>
-            <button
-              onClick={() => {
-                setEditingExperience(null);
-                setExperienceFormData({ title: '', company: '', period: '', location: '', description: '' });
-                setIsExperienceModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <FiPlus />
-              <span>Add Experience</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openMoveModal('experiences')}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                title="Reorder Experiences"
+              >
+                <FiMove />
+                <span>Move</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEditingExperience(null);
+                  setExperienceFormData({ title: '', company: '', period: '', location: '', description: '' });
+                  setIsExperienceModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <FiPlus />
+                <span>Add Experience</span>
+              </button>
+            </div>
           </div>
           <div className="p-4">
             <div className="space-y-4">
@@ -444,17 +454,27 @@ export default function ResumePage() {
               <h2 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Education</h2>
               <p className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Manage your education entries.</p>
             </div>
-            <button
-              onClick={() => {
-                setEditingEducation(null);
-                setEducationFormData({ degree: '', institution: '', period: '', location: '' });
-                setIsEducationModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <FiPlus />
-              <span>Add Education</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openMoveModal('educations')}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                title="Reorder Educations"
+              >
+                <FiMove />
+                <span>Move</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEditingEducation(null);
+                  setEducationFormData({ degree: '', institution: '', period: '', location: '' });
+                  setIsEducationModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <FiPlus />
+                <span>Add Education</span>
+              </button>
+            </div>
           </div>
           <div className="p-4">
             <div className="space-y-4">
@@ -503,13 +523,23 @@ export default function ResumePage() {
               <h2 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Knowledge</h2>
               <p className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Manage your knowledge badges shown on the Resume page.</p>
             </div>
-            <button
-              onClick={() => { setEditingKnowledgeIndex(null); setKnowledgeInput(''); setIsKnowledgeModalOpen(true); }}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <FiPlus />
-              <span>Add Knowledge</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openMoveModal('knowledge')}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                title="Reorder Knowledge"
+              >
+                <FiMove />
+                <span>Move</span>
+              </button>
+              <button
+                onClick={() => { setEditingKnowledgeIndex(null); setKnowledgeInput(''); setIsKnowledgeModalOpen(true); }}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <FiPlus />
+                <span>Add Knowledge</span>
+              </button>
+            </div>
           </div>
           <div className="p-4">
             <div className="flex flex-wrap gap-3">
