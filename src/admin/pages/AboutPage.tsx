@@ -250,7 +250,7 @@ export default function AboutPage() {
   const [whatIDoOrder, setWhatIDoOrder] = useState<string[]>([]);
 
   const openMoveModal = () => {
-    // Sort by order_index asc then createdAt desc to initialize
+    // Initialize order based on current sorting: order_index asc, then createdAt desc
     const sorted = [...whatIDoItems].sort((a, b) => {
       const ai = (a as any).order_index ?? Number.POSITIVE_INFINITY;
       const bi = (b as any).order_index ?? Number.POSITIVE_INFINITY;
@@ -389,20 +389,20 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>About Section</h1>
-              <p className={`mt-1 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              <h1 className={`text-xl sm:text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>About Section</h1>
+              <p className={`mt-0.5 sm:mt-1 text-xs sm:text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
                 Manage your personal information and bio for the About section
               </p>
             </div>
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
-                <FiUser size={16} />
-                Edit About
+                <FiUser className="w-4 h-4" />
+                <span>Edit About</span>
               </button>
             )}
           </div>
@@ -435,18 +435,18 @@ export default function AboutPage() {
               </div>
 
               {/* Form Actions */}
-              <div className={`flex gap-3 pt-4 border-t ${isLightMode ? 'border-gray-200' : 'border-slate-600'}`}>
+              <div className={`flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t ${isLightMode ? 'border-gray-200' : 'border-slate-600'}`}>
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-blue-600 text-white py-2.5 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
                 >
-                  <FiSave size={16} />
-                  Save Changes
+                  <FiSave className="w-4 h-4" />
+                  <span>Save Changes</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className={`flex-1 py-2 px-4 rounded-lg transition-colors ${isLightMode ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-slate-600 text-gray-300 hover:bg-slate-500'}`}
+                  className={`flex-1 py-2.5 px-4 text-sm sm:text-base rounded-lg transition-colors font-medium ${isLightMode ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-slate-600 text-gray-300 hover:bg-slate-500'}`}
                 >
                   Cancel
                 </button>
@@ -468,23 +468,23 @@ export default function AboutPage() {
 
               {/* What I Do Section */}
               <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>What I Do</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+                  <h3 className={`text-base sm:text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>What I Do</h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={openMoveModal}
-                      className="inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-purple-600 text-white text-xs sm:text-sm rounded-lg hover:bg-purple-700 transition-colors"
                       title="Reorder What I Do"
                     >
-                      <FiMove className="mr-2" size={14} />
-                      Move
+                      <FiMove className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span>Move</span>
                     </button>
                     <button
                       onClick={() => setIsWhatIDoModalOpen(true)}
-                      className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      <FiPlus className="mr-2" size={14} />
-                      Add Item
+                      <FiPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span>Add Item</span>
                     </button>
                   </div>
                 </div>
@@ -771,10 +771,11 @@ export default function AboutPage() {
                         }
                         await refreshData();
                         setIsMoveOpen(false);
-                        setTimeout(() => showSuccessModal('Move Saved', 'What I Do item positions have been updated.'), 0);
+                        setWhatIDoOrder([]);
+                        showSuccessModal('Move Saved', 'What I Do order has been updated.');
                       } catch (err) {
                         console.error('Error saving What I Do order:', err);
-                        showSuccessModal('Error', 'Failed to save new positions. Please try again.', 'warning');
+                        showSuccessModal('Error', 'Failed to save order. Please try again.', 'warning');
                       }
                     }}
                     className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"

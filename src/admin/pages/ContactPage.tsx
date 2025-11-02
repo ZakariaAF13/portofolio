@@ -69,40 +69,40 @@ export default function ContactPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Contact Information</h1>
-              <p className={`mt-1 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              <h1 className={`text-xl sm:text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Contact Information</h1>
+              <p className={`mt-0.5 sm:mt-1 text-xs sm:text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
                 Manage your basic contact details
               </p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2">
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
                 >
-                  <FiEdit3 className="mr-2 w-4 h-4" />
-                  Edit Contact Info
+                  <FiEdit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>Edit Contact Info</span>
                 </button>
               ) : (
-                <div className="flex items-center space-x-2">
+                <>
                   <button
                     onClick={handleCancel}
-                    className="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
                   >
-                    <FiX className="mr-2 w-4 h-4" />
-                    Cancel
+                    <FiX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span>Cancel</span>
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
                   >
-                    <FiSave className="mr-2 w-4 h-4" />
-                    {isSaving ? 'Saving...' : 'Save Changes'}
+                    <FiSave className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
                   </button>
-                </div>
+                </>
               )}
             </div>
           </div>
