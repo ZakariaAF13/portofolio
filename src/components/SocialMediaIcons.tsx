@@ -78,6 +78,9 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
       whatsapp: { color: 'hover:text-green-600', bgColor: 'hover:bg-green-50', coloredBg: 'bg-green-600 hover:bg-green-700', baseText: 'text-green-600', hoverSolidBg: 'hover:bg-green-600' },
       discord: { color: 'hover:text-indigo-600', bgColor: 'hover:bg-indigo-50', coloredBg: 'bg-indigo-600 hover:bg-indigo-700', baseText: 'text-indigo-600', hoverSolidBg: 'hover:bg-indigo-600' },
       telegram: { color: 'hover:text-sky-500', bgColor: 'hover:bg-sky-50', coloredBg: 'bg-sky-500 hover:bg-sky-600', baseText: 'text-sky-500', hoverSolidBg: 'hover:bg-sky-500' },
+      tiktok: theme === 'dark'
+        ? { color: 'hover:text-white', bgColor: 'hover:bg-gray-800', coloredBg: 'bg-black hover:bg-gray-900', baseText: 'text-white', hoverSolidBg: 'hover:bg-black' }
+        : { color: 'hover:text-black', bgColor: 'hover:bg-gray-50', coloredBg: 'bg-black hover:bg-gray-900', baseText: 'text-black', hoverSolidBg: 'hover:bg-black' },
       twitch: { color: 'hover:text-purple-600', bgColor: 'hover:bg-purple-50', coloredBg: 'bg-purple-600 hover:bg-purple-700', baseText: 'text-purple-600', hoverSolidBg: 'hover:bg-purple-600' },
       spotify: { color: 'hover:text-green-500', bgColor: 'hover:bg-green-50', coloredBg: 'bg-green-500 hover:bg-green-600', baseText: 'text-green-500', hoverSolidBg: 'hover:bg-green-500' },
       soundcloud: { color: 'hover:text-orange-500', bgColor: 'hover:bg-orange-50', coloredBg: 'bg-orange-500 hover:bg-orange-600', baseText: 'text-orange-500', hoverSolidBg: 'hover:bg-orange-500' },
@@ -188,6 +191,7 @@ const SocialMediaIcons: React.FC<SocialMediaIconsProps> = ({
           const [isHovered, setIsHovered] = React.useState(false);
           const baseTextClass = link.baseText as string;
           const getBrandColor = (baseTextClass: string) => {
+            if (baseTextClass.includes('black')) return '#000000';
             if (baseTextClass.includes('blue')) return '#2563eb';
             if (baseTextClass.includes('green')) return '#16a34a';
             if (baseTextClass.includes('pink')) return '#db2777';
