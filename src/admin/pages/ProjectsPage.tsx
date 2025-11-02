@@ -1,4 +1,5 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload, FiMove, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
@@ -14,7 +15,6 @@ export default function ProjectsPage() {
   const { isLightMode } = useAdminTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -54,31 +54,24 @@ export default function ProjectsPage() {
   const derivedCategories = useMemo(() => Array.from(new Set(projects.map(p => p.category))).filter(Boolean), [projects]);
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
   const [activeMoveCategory, setActiveMoveCategory] = useState<string>('all');
-  // Keep a stable global order list of project IDs to prevent stacking/duplication issues
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
-  // Drag UI removed; using table with up/down buttons instead
-
-  // Note: category order management still handled in Move modal via Firestore, but unused badges are removed.
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
 
   const openMoveModal = async () => {
-    // Load settings for categories order (if exists)
     try {
       const settings = await getPortfolioSettingsFromFirestore();
       const existingOrder = settings && Array.isArray((settings as any).categories_order)
         ? (settings as any).categories_order as string[]
         : [];
-      // Merge: keep existing order first, then append any new categories
       const merged = [...existingOrder.filter(c => derivedCategories.includes(c)), ...derivedCategories.filter(c => !existingOrder.includes(c))];
       setCategoryOrder(merged);
     } catch (e) {
       setCategoryOrder(derivedCategories);
     }
-    // Build initial project order list: order by order_index asc (if defined) then createdAt desc
     const withIndex = [...projects].sort((a, b) => {
       const ai = (a.order_index ?? Number.POSITIVE_INFINITY);
       const bi = (b.order_index ?? Number.POSITIVE_INFINITY);
       if (ai !== bi) return ai - bi;
-      // fallback: newer first
       return (b.createdAt || '').localeCompare(a.createdAt || '');
     });
     setOrderedIds(withIndex.map(p => p.id));
@@ -92,7 +85,6 @@ export default function ProjectsPage() {
     setOrderedIds([]);
   };
 
-  // Helper: move a project up/down within the currently visible list (all or specific category)
   const moveProjectInView = (id: string, direction: 'up' | 'down') => {
     const idToProject = new Map(projects.map(p => [p.id, p] as const));
     const allOrdered = orderedIds.map(pid => idToProject.get(pid)).filter(Boolean) as Project[];
@@ -105,19 +97,15 @@ export default function ProjectsPage() {
     if (index === -1) return;
 
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= visibleIds.length) return; // cannot move
+    if (targetIndex < 0 || targetIndex >= visibleIds.length) return;
 
-    // swap within visible ids
     const newVisibleIds = [...visibleIds];
     const tmp = newVisibleIds[index];
     newVisibleIds[index] = newVisibleIds[targetIndex];
     newVisibleIds[targetIndex] = tmp;
 
-    // Apply to global orderedIds
     setOrderedIds(prev => {
       if (activeMoveCategory === 'all') return newVisibleIds;
-
-      // integrate back to original positions of this category only
       const prevIds = [...prev];
       const isInCat = (pid: string) => idToProject.get(pid)?.category === activeMoveCategory;
       const categoryPositions: number[] = [];
@@ -266,7 +254,7 @@ export default function ProjectsPage() {
           imageUrl: formData.imageUrl,
           tiktokUrl: normalizedTikTokUrl,
           instagramReelsUrl: formData.instagramReelsUrl || undefined,
-          liveUrl: formData.liveUrl || undefined,
+          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
         });
         showSuccessModal('Project Updated!', `"${formData.title}" has been updated successfully.`);
       } else {
@@ -279,7 +267,7 @@ export default function ProjectsPage() {
           imageUrl: formData.imageUrl,
           tiktokUrl: normalizedTikTokUrl,
           instagramReelsUrl: formData.instagramReelsUrl || undefined,
-          liveUrl: formData.liveUrl || undefined,
+          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
           createdAt: new Date().toISOString().split('T')[0],
         });
         showSuccessModal('Project Added!', `"${formData.title}" has been added successfully.`);
@@ -350,25 +338,25 @@ export default function ProjectsPage() {
   return (
     <div className={`min-h-screen p-4 sm:p-6 ${isLightMode ? 'bg-gray-50' : 'bg-slate-900'}`}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Projects</h1>
-            <p className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your portfolio projects.</p>
+            <p className={`mt-1 text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your portfolio projects.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={openMoveModal}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               title="Reorder Projects & Categories"
             >
-              <FiMove />
+              <FiMove className="w-4 h-4" />
               <span>Move</span>
             </button>
             <button 
               onClick={() => openModal()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <FiPlus />
+              <FiPlus className="w-4 h-4" />
               <span>Add Project</span>
             </button>
           </div>
@@ -386,9 +374,51 @@ export default function ProjectsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            
           </div>
-          <div className="overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="block md:hidden">
+            {filteredProjects.map(project => (
+              <div key={project.id} className={`p-4 border-b last:border-b-0 ${isLightMode ? 'border-gray-200' : 'border-slate-700'}`}>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-semibold text-base truncate ${isLightMode ? 'text-gray-900' : 'text-white'}`}>
+                      {project.title}
+                    </h3>
+                    <p className={`text-sm ${isLightMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                      {project.category}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 ml-3">
+                    <button 
+                      onClick={() => openModal(project)}
+                      className={`p-2 rounded transition-colors ${isLightMode ? 'text-blue-600 hover:bg-blue-50' : 'text-blue-400 hover:bg-slate-700'}`}
+                      aria-label="Edit"
+                    >
+                      <FiEdit size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(project.id, project.title)}
+                      className={`p-2 rounded transition-colors ${isLightMode ? 'text-red-600 hover:bg-red-50' : 'text-red-400 hover:bg-slate-700'}`}
+                      aria-label="Delete"
+                    >
+                      <FiTrash size={18} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${project.status === 'Published' ? (isLightMode ? 'bg-green-100 text-green-800' : 'bg-green-900/30 text-green-300') : (isLightMode ? 'bg-yellow-100 text-yellow-800' : 'bg-yellow-900/30 text-yellow-300')}`}>
+                    {project.status}
+                  </span>
+                  <span className={`text-xs ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {project.createdAt}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
               <thead className={`text-xs uppercase ${isLightMode ? 'text-gray-700 bg-gray-50' : 'text-gray-400 bg-slate-700'}`}>
                 <tr>
@@ -447,25 +477,25 @@ export default function ProjectsPage() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-0"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                <div className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                       {editingProject ? 'Edit Project' : 'Add New Project'}
                     </h2>
                     <button
                       onClick={closeModal}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
                     >
-                      <FiX size={24} />
+                      <FiX size={20} className="sm:w-6 sm:h-6" />
                     </button>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         Title
                       </label>
                       <input
@@ -473,37 +503,48 @@ export default function ProjectsPage() {
                         required
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                         placeholder="Enter project title"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         Category
                       </label>
                       <select
                         required
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value, customCategory: '' })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                       >
                         <option value="">Select Category</option>
+                        {/* Default categories */}
+                        <option value="Web Development">Web Development</option>
+                        <option value="Mobile App">Mobile App</option>
+                        <option value="Desktop App">Desktop App</option>
+                        <option value="UI/UX Design">UI/UX Design</option>
+                        <option value="TikTok">TikTok</option>
+                        {/* Dynamic categories from existing projects */}
                         {Array.from(new Set(projects.map(p => p.category)))
-                          .filter((c): c is string => !!c && c !== 'Other')
+                          .filter(category => 
+                            category && 
+                            !['Web Development', 'Mobile App', 'Desktop App', 'UI/UX Design', 'TikTok'].includes(category)
+                          )
                           .sort()
                           .map(category => (
                             <option key={category} value={category}>
                               {category}
                             </option>
-                          ))}
+                          ))
+                        }
                         <option value="Other">Other</option>
                       </select>
                     </div>
 
                     {formData.category === 'Other' && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                           Other Category
                         </label>
                         <input
@@ -511,20 +552,20 @@ export default function ProjectsPage() {
                           required={formData.category === 'Other'}
                           value={formData.customCategory}
                           onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                           placeholder="Enter other category name"
                         />
                       </div>
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         Status
                       </label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Published' | 'Draft' })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                       >
                         <option value="Draft">Draft</option>
                         <option value="Published">Published</option>
@@ -532,96 +573,96 @@ export default function ProjectsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         Description
                       </label>
                       <textarea
                         rows={3}
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                         placeholder="Project description"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         Technologies
                       </label>
                       <input
                         type="text"
                         value={formData.technologies}
                         onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                         placeholder="React, Node.js, MongoDB (comma separated)"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Project URL (Live)
-                      </label>
-                      <input
-                        type="url"
-                        value={formData.liveUrl}
-                        onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                        placeholder="https://your-live-site.com"
-                      />
-                    </div>
-
-                    {formData.category === 'Other' && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            TikTok URL
-                          </label>
-                          <input
-                            type="url"
-                            value={formData.tiktokUrl}
-                            onChange={(e) => setFormData({ ...formData, tiktokUrl: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                            placeholder="https://www.tiktok.com/@username/video/1234567890"
-                          />
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Masukkan URL video TikTok penuh untuk di-embed
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Instagram Reels URL
-                          </label>
-                          <input
-                            type="url"
-                            value={formData.instagramReelsUrl}
-                            onChange={(e) => setFormData({ ...formData, instagramReelsUrl: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                            placeholder="https://www.instagram.com/reel/SHORTCODE/"
-                          />
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Masukkan URL Reels Instagram (format reel/SHORTCODE)
-                          </p>
-                        </div>
-                      </>
+                    {formData.category !== 'TikTok' && (
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                          Project URL (Live)
+                        </label>
+                        <input
+                          type="url"
+                          value={formData.liveUrl}
+                          onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                          placeholder="https://your-live-site.com"
+                        />
+                      </div>
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        TikTok URL
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.tiktokUrl}
+                        onChange={(e) => setFormData({ ...formData, tiktokUrl: e.target.value })}
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        placeholder="https://www.tiktok.com/@username/video/1234567890"
+                        required={formData.category === 'TikTok'}
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Enter the full TikTok video URL for embedding
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Instagram Reels URL
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.instagramReelsUrl}
+                        onChange={(e) => setFormData({ ...formData, instagramReelsUrl: e.target.value })}
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        placeholder="https://www.instagram.com/reel/SHORTCODE/"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Paste the Instagram Reels URL (e.g. https://www.instagram.com/reel/SHORTCODE/)
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         Project Image
                       </label>
                       <div className="space-y-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                           <input
                             type="text"
                             value={formData.imageUrl}
                             onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                            className="flex-1 px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                             placeholder="Enter image URL or upload file"
                           />
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="px-4 py-2 bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 transition-colors flex items-center gap-2"
+                            className="px-4 py-2 text-sm sm:text-base bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 transition-colors flex items-center justify-center gap-2"
                           >
                             <FiUpload size={16} />
                             Upload
@@ -673,17 +714,17 @@ export default function ProjectsPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4">
                       <button
                         type="submit"
-                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex-1 bg-blue-600 text-white py-2.5 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors font-medium"
                       >
                         {editingProject ? 'Update Project' : 'Create Project'}
                       </button>
                       <button
                         type="button"
                         onClick={closeModal}
-                        className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors"
+                        className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2.5 px-4 text-sm sm:text-base rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors font-medium"
                       >
                         Cancel
                       </button>
@@ -737,7 +778,7 @@ export default function ProjectsPage() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className={`rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}
+                className={`rounded-xl shadow-xl w-full max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0 ${isLightMode ? 'bg-white' : 'bg-slate-800'}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="p-6">
@@ -748,14 +789,13 @@ export default function ProjectsPage() {
                     </button>
                   </div>
 
-                  {/* Draggable Categories (All fixed at the far left) */}
+                  {/* Categories */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className={`font-semibold ${isLightMode ? 'text-gray-800' : 'text-gray-200'}`}>Categories</h3>
                       <span className={`${isLightMode ? 'text-gray-500' : 'text-gray-400'} text-sm`}>Drag to move categories. "All" fixed at left.</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Fixed All at left */}
                       <button
                         onClick={() => setActiveMoveCategory('all')}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${activeMoveCategory === 'all' ? 'bg-blue-600 text-white border-blue-600' : (isLightMode ? 'text-gray-700 border-gray-300' : 'text-gray-300 border-slate-600')}`}
@@ -779,7 +819,7 @@ export default function ProjectsPage() {
                     </div>
                   </div>
 
-                  {/* Table-based Project Reordering (Up/Down) */}
+                  {/* Projects table with up/down */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className={`${isLightMode ? 'text-gray-800' : 'text-gray-200'} font-semibold`}>Move Projects</h3>
@@ -795,7 +835,7 @@ export default function ProjectsPage() {
 
                       return (
                         <div className="overflow-x-auto overflow-y-auto h-[480px]">
-                          <table className="w-full text-sm text-left" style={{ '--table-row-height': '3rem' }}>
+                          <table className="w-full text-sm text-left">
                             <thead className={`${isLightMode ? 'bg-gray-100 text-gray-700' : 'bg-slate-700 text-gray-300'}`}>
                               <tr>
                                 <th className="px-4 py-2 w-16">Order</th>
@@ -812,23 +852,23 @@ export default function ProjectsPage() {
                                   <td className="px-4 py-2">{p.category}</td>
                                   <td className="px-4 py-2">
                                     <div className="flex items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => moveProjectInView(p.id, 'up')}
-                                      disabled={idx === 0}
-                                      className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
-                                      title="Move Up"
-                                    >
-                                      <FiArrowUp />
-                                    </button>
-                                    <button
-                                      onClick={() => moveProjectInView(p.id, 'down')}
-                                      disabled={idx === visibleProjects.length - 1}
-                                      className={`p-2 rounded border ${idx === visibleProjects.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
-                                      title="Move Down"
-                                    >
-                                      <FiArrowDown />
-                                    </button>
-                                  </div>
+                                      <button
+                                        onClick={() => moveProjectInView(p.id, 'up')}
+                                        disabled={idx === 0}
+                                        className={`p-2 rounded border ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
+                                        title="Move Up"
+                                      >
+                                        <FiArrowUp />
+                                      </button>
+                                      <button
+                                        onClick={() => moveProjectInView(p.id, 'down')}
+                                        disabled={idx === visibleProjects.length - 1}
+                                        className={`p-2 rounded border ${idx === visibleProjects.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-slate-600'} ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}
+                                        title="Move Down"
+                                      >
+                                        <FiArrowDown />
+                                      </button>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
@@ -840,16 +880,12 @@ export default function ProjectsPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-3 pt-6">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 sm:pt-6">
                     <button
                       onClick={async () => {
                         try {
-                          // Persist categories order
                           await updatePortfolioSettingsInFirestore({ categories_order: categoryOrder });
-
-                          // Build new order_index for all projects based on current orderedIds (global)
                           const updates = orderedIds.map((id, idx) => ({ id, order_index: idx }));
-                          // Update sequentially to avoid rate-limiting issues
                           for (const u of updates) {
                             await updateProject(u.id, { order_index: u.order_index });
                           }
@@ -860,13 +896,13 @@ export default function ProjectsPage() {
                           showSuccessModal('Error', 'Failed to save new positions. Please try again.', 'warning');
                         }
                       }}
-                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      className="flex-1 bg-blue-600 text-white py-2.5 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors font-medium"
                     >
                       Save Move
                     </button>
                     <button
                       onClick={closeMoveModal}
-                      className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors"
+                      className="flex-1 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 py-2.5 px-4 text-sm sm:text-base rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors font-medium"
                     >
                       Cancel
                     </button>
