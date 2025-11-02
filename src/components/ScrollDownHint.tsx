@@ -39,7 +39,7 @@ export default function ScrollDownHint({ targetRef, theme }: ScrollDownHintProps
   const isDark = theme === 'dark';
 
   return (
-    <div className="pointer-events-none absolute bottom-3 right-3">
+    <div className="pointer-events-none fixed bottom-6 right-6 z-50">
       <div
         className={`pointer-events-auto inline-flex items-center justify-center w-9 h-9 rounded-full shadow-lg animate-bounce transition-colors ${
           isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-white text-gray-800 hover:bg-gray-100'

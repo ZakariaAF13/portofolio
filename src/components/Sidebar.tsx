@@ -80,7 +80,7 @@ export default function Sidebar() {
       </div>
       
       <h2 className={`font-bold text-xl text-center ${textClass} w-full`}>{profile?.name || 'Loading...'}</h2>
-      <span className={`mt-2 mb-5 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'} px-4 py-1 rounded-full text-sm font-medium ${subtitleClass}`}>
+      <span className={`mt-2 mb-5 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'} px-4 py-1 rounded-full text-sm font-medium ${subtitleClass} text-center max-w-full break-words`}>
         {profile?.title || 'Loading...'}
       </span>
       

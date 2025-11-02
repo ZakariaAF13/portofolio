@@ -1,6 +1,7 @@
 import { Calendar, MapPin, Building } from 'lucide-react';
 import { useRef } from 'react';
 import ScrollDownHint from './ScrollDownHint';
+import InfoTooltip from './InfoTooltip';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 
@@ -166,6 +167,7 @@ export default function Resume({ theme }: ResumeProps) {
           </div>
         </div>
       </div>
+      <InfoTooltip theme={theme} duration={5000} />
       <ScrollDownHint targetRef={sectionRef} theme={theme} />
     </section>
   );
