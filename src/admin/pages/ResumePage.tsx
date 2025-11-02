@@ -318,7 +318,57 @@ export default function ResumePage() {
               />
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="block md:hidden">
+            {filteredSkills.map((skill, index) => (
+              <div key={skill.id || `skill-${index}`} className={`p-4 border-b last:border-b-0 ${isLightMode ? 'border-gray-200' : 'border-slate-700'}`}>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-semibold text-base truncate ${isLightMode ? 'text-gray-900' : 'text-white'}`}>
+                      {skill.name}
+                    </h3>
+                    <p className={`text-sm ${isLightMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                      {skill.category}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 ml-3">
+                    <button 
+                      onClick={() => openModal(skill)}
+                      className={`p-2 rounded transition-colors ${isLightMode ? 'text-blue-600 hover:bg-blue-50' : 'text-blue-400 hover:bg-slate-700'}`}
+                      aria-label="Edit"
+                    >
+                      <FiEdit size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(skill.id, skill.name, 'skill')}
+                      className={`p-2 rounded transition-colors ${isLightMode ? 'text-red-600 hover:bg-red-50' : 'text-red-400 hover:bg-slate-700'}`}
+                      aria-label="Delete"
+                    >
+                      <FiTrash size={18} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(skill.level)}`}>
+                    {skill.level}
+                  </span>
+                  <div className="flex items-center gap-2 flex-1 ml-3">
+                    <div className={`flex-1 rounded-full h-2 ${isLightMode ? 'bg-gray-200' : 'bg-slate-700'}`}>
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${skill.percentage}%` }}
+                      ></div>
+                    </div>
+                    <span className={`text-sm font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{skill.percentage}%</span>
+                  </div>
+                </div>
+                <div className={`text-xs mt-2 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {skill.createdAt}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className={`w-full text-sm text-left ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
               <thead className={`text-xs uppercase ${isLightMode ? 'text-gray-700 bg-gray-50' : 'text-gray-400 bg-slate-700'}`}>
                 <tr>

@@ -109,25 +109,37 @@ export default function AdminLayout() {
                 })}
               </nav>
             </div>
-            <div className={`flex flex-shrink-0 border-t p-4 ${isLightMode ? 'border-gray-200' : 'border-gray-700'}`}>
-              <div className="group block w-full flex-shrink-0">
-                <div className="flex items-center">
-                  <UserCircleIcon className={`h-9 w-9 ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`} />
-                  <div className="ml-3">
-                    <p className={`text-sm font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{user?.email}</p>
-                    <button
-                      onClick={() => { setSidebarOpen(false); navigate('/admin/account'); }}
-                      className={`text-xs font-medium transition-colors ${isLightMode ? 'text-blue-600 hover:text-blue-800' : 'text-blue-300 hover:text-white'}`}
-                    >
-                      Manage account
-                    </button>
-                    <button
-                      onClick={handleSignOut}
-                      className={`text-xs font-medium transition-colors ${isLightMode ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 hover:text-white'}`}
-                    >
-                      Sign out
-                    </button>
+            <div className={`flex flex-shrink-0 border-t ${isLightMode ? 'border-gray-200' : 'border-gray-700'}`}>
+              <div className="w-full p-3">
+                {/* User Info */}
+                <div className="flex items-center gap-3 mb-3">
+                  <UserCircleIcon className={`h-10 w-10 flex-shrink-0 ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{user?.email}</p>
                   </div>
+                </div>
+                {/* Action Buttons */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => { setSidebarOpen(false); navigate('/admin/account'); }}
+                    className={`w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isLightMode 
+                        ? 'text-blue-700 bg-blue-50 hover:bg-blue-100' 
+                        : 'text-blue-300 bg-blue-900/30 hover:bg-blue-900/50'
+                    }`}
+                  >
+                    Manage account
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className={`w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isLightMode 
+                        ? 'text-gray-700 bg-gray-100 hover:bg-gray-200' 
+                        : 'text-gray-300 bg-gray-700 hover:bg-gray-600'
+                    }`}
+                  >
+                    Sign out
+                  </button>
                 </div>
               </div>
             </div>
