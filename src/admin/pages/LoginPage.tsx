@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useFirebaseAuth } from '../../context/FirebaseAuthContext';
+import { activityHelpers } from '../../utils/activityLogger';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -21,6 +22,9 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password);
       if (result.error) throw result.error;
+      
+      // Log login activity
+      await activityHelpers.userLoggedIn(email);
       
       // Redirect them back to the page they tried to visit when they were
       // redirected to the login page. Use { replace: true } so we don't create

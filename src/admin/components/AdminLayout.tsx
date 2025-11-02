@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useFirebaseAuth } from '../../context/FirebaseAuthContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
+import { activityHelpers } from '../../utils/activityLogger';
 import { Menu, Transition } from '@headlessui/react';
 import {
   Bars3Icon,
@@ -12,6 +13,7 @@ import {
   DocumentTextIcon,
   UserIcon,
   PhoneIcon,
+  ClockIcon,
   SunIcon,
   MoonIcon,
   UserCircleIcon,
@@ -24,6 +26,7 @@ const navigationItems = [
   { name: 'About', href: '/admin/about', icon: DocumentTextIcon },
   { name: 'Profile', href: '/admin/profile', icon: UserIcon },
   { name: 'Contact', href: '/admin/contact', icon: PhoneIcon },
+  { name: 'Activity', href: '/admin/activity', icon: ClockIcon },
 ];
 
 function classNames(...classes: string[]) {
@@ -43,6 +46,9 @@ export default function AdminLayout() {
   }));
 
   const handleSignOut = async () => {
+    if (user?.email) {
+      await activityHelpers.userLoggedOut(user.email);
+    }
     await signOut();
     navigate('/admin/login');
   };

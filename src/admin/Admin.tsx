@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage';
 import AccountPage from './pages/AccountPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import ActivityPage from './pages/ActivityPage';
 import LoginPage from './pages/LoginPage';
 
 export default function Admin() {
@@ -34,6 +35,7 @@ export default function Admin() {
             <Route path="account" element={<AccountPage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="contact" element={<ContactPage />} />
+            <Route path="activity" element={<ActivityPage />} />
             {/* Add more admin routes here */}
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>

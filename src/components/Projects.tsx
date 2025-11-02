@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import type { Theme } from '../types';
 import ScrollDownHint from './ScrollDownHint';
+import InfoTooltip from './InfoTooltip';
 import { getPortfolioSettingsFromFirestore } from '../utils/portfolioFirestore';
 
 interface ProjectsProps {
@@ -271,6 +272,7 @@ export default function Projects({ theme }: ProjectsProps) {
           </p>
         </div>
       )}
+      <InfoTooltip theme={theme} duration={5000} />
       <ScrollDownHint targetRef={sectionRef} theme={theme} />
     </section>
   );
