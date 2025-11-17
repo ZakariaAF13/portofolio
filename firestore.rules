@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    match /portfolio_projects/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_skills/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_profile/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_settings/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_what_i_do/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_knowledge/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_experiences/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_educations/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_sections/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /contact_messages/{document} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
