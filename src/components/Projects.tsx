@@ -1,10 +1,12 @@
-import React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useFirebaseData } from '../context/FirebaseDataContext';
+import { getBilingualText } from '../utils/bilingual';
 import type { Theme } from '../types';
 import ScrollDownHint from './ScrollDownHint';
 import InfoTooltip from './InfoTooltip';
 import { getPortfolioSettingsFromFirestore } from '../utils/portfolioFirestore';
+import AutoTranslate from './AutoTranslate';
 
 interface ProjectsProps {
   theme: Theme;
@@ -12,13 +14,19 @@ interface ProjectsProps {
 
 export default function Projects({ theme }: ProjectsProps) {
   const { projects } = useFirebaseData();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [categoriesOrder, setCategoriesOrder] = useState<string[]>([]);
   const sectionRef = useRef<HTMLElement>(null);
-  const [expandedDesc, setExpandedDesc] = useState<Record<string, boolean>>({});
-
+  const [expandedDesc] = useState<Record<string, boolean>>({});
   const isExpanded = (id: string) => !!expandedDesc[id];
-  const toggleExpanded = (id: string) => setExpandedDesc(prev => ({ ...prev, [id]: !prev[id] }));
+  
+  // Handle translation updates
+  const handleTranslateProject = useCallback((projectId: string, field: string, translatedText: string) => {
+    // This function will be called when translation is complete
+    console.log(`Translated ${field} for project ${projectId}:`, translatedText);
+  }, []);
   const truncateWords = (text: string, limit = 6) => {
     const words = text.trim().split(/\s+/);
     if (words.length <= limit) return text;
@@ -72,7 +80,7 @@ export default function Projects({ theme }: ProjectsProps) {
     ...allCats.filter(c => !categoriesOrder.includes(c))
   ];
   const categories = [
-    { id: 'all', label: 'All' },
+    { id: 'all', label: t('projects.all') },
     ...orderedCats.map(category => ({ id: category, label: category }))
   ];
 
@@ -87,9 +95,12 @@ export default function Projects({ theme }: ProjectsProps) {
   return (
     <section ref={sectionRef} className={`${theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white'} relative rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
-        <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          Project
-        </h2>
+        <div className="flex items-center gap-4">
+          <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+            {t('projects.title')}
+          </h2>
+          <InfoTooltip theme={theme} duration={5000} inline />
+        </div>
         <div className="h-1 bg-blue-600 rounded-full w-full sm:flex-grow"></div>
       </div>
 
@@ -113,13 +124,15 @@ export default function Projects({ theme }: ProjectsProps) {
       </div>
 
       {/* Projects Grid (Non-TikTok) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {nonTikTokProjects.map((project) => (
-          (() => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+        {nonTikTokProjects.map((project) => {
             const isTikTok = false; // by construction
-            const cardClass = `group rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg ${
+            const cardClass = `group rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg self-start ${
               theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-50 hover:bg-gray-100'
             } ${!isTikTok && project.liveUrl ? 'cursor-pointer' : ''}`;
+            const localizedDescription = project.description
+              ? getBilingualText(project, 'description', currentLang)
+              : undefined;
             const content = (
               <>
                 {
@@ -152,7 +165,7 @@ export default function Projects({ theme }: ProjectsProps) {
                         {project.imageUrl ? (
                           <img
                             src={project.imageUrl}
-                            alt={project.title}
+                            alt={getBilingualText(project, 'title', currentLang)}
                             className="w-full h-full object-cover rounded-lg"
                           />
                         ) : (
@@ -161,9 +174,9 @@ export default function Projects({ theme }: ProjectsProps) {
                               'bg-blue-600 text-white'
                             }`}
                           >
-                            {project.title
+                            {getBilingualText(project, 'title', currentLang)
                               .split(' ')
-                              .map((word) => word[0])
+                              .map((word: string) => word[0])
                               .join('')
                               .slice(0, 2)}
                           </div>
@@ -178,24 +191,24 @@ export default function Projects({ theme }: ProjectsProps) {
                       >
                         {project.technologies?.join(', ') || project.category}
                       </div>
-                      <h3
-                        className={`font-semibold ${
-                          theme === 'dark' ? 'text-white' : 'text-gray-800'
-                        }`}
-                      >
-                        {project.title}
+                      <h3 className="text-lg font-semibold mb-2">
+                        <AutoTranslate 
+                          text={getBilingualText(project, 'title', currentLang)} 
+                          fieldName={`project-${project.id}-title`}
+                          onTranslate={(translated) => handleTranslateProject(project.id, 'title', translated)}
+                        />
                       </h3>
-                      {project.description && (
-                        <p
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleExpanded(project.id); }}
-                          className={`text-sm mt-2 ${
-                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                          } cursor-pointer select-none`}
-                          title={isExpanded(project.id) ? 'Click to collapse' : 'Click to read more'}
-                        >
-                          {isExpanded(project.id)
-                            ? project.description
-                            : truncateWords(project.description)}
+                      {localizedDescription && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                          {isExpanded(project.id) ? (
+                            <AutoTranslate 
+                              text={getBilingualText(project, 'description', currentLang)}
+                              fieldName={`project-${project.id}-description`}
+                              onTranslate={(translated) => handleTranslateProject(project.id, 'description', translated)}
+                            />
+                          ) : (
+                            truncateWords(getBilingualText(project, 'description', currentLang))
+                          )}
                         </p>
                       )}
                     </div>
@@ -211,7 +224,7 @@ export default function Projects({ theme }: ProjectsProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cardClass}
-                title={`Open ${project.title}`}
+                title={`Open ${getBilingualText(project, 'title', currentLang)}`}
               >
                 {content}
               </a>
@@ -219,60 +232,69 @@ export default function Projects({ theme }: ProjectsProps) {
               <div key={project.id} className={cardClass}>
                 {content}
               </div>
-            );
-          })()
-        ))}
+            )
+          })}
       </div>
 
       {/* TikTok Projects Grid (separate), only show when there are TikTok items */}
       {tikTokProjects.length > 0 && (
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tikTokProjects.map(project => (
-            <div
-              key={project.id}
-              className={`group rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg ${
-                theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-50 hover:bg-gray-100'
-              }`}
-            >
-              <div className="w-full">
-                <div className="relative aspect-[9/16] w-full max-w-sm mx-auto">
-                  <iframe
-                    src={`https://www.tiktok.com/player/v1/${extractTikTokVideoId(project.tiktokUrl || '')}`}
-                    className="absolute top-0 left-0 w-full h-full rounded-lg"
-                    frameBorder="0"
-                    allow="autoplay; fullscreen"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                    {project.title}
-                  </h3>
-                  {project.description && (
-                    <p
-                      onClick={() => toggleExpanded(project.id)}
-                      className={`text-sm mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} cursor-pointer select-none`}
-                      title={isExpanded(project.id) ? 'Click to collapse' : 'Click to read more'}
-                    >
-                      {isExpanded(project.id)
-                        ? project.description
-                        : truncateWords(project.description)}
-                    </p>
-                  )}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+          {tikTokProjects.map(project => {
+            const localizedDescription = project.description
+              ? getBilingualText(project, 'description', currentLang)
+              : undefined;
+            return (
+              <div
+                key={project.id}
+                className={`group rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg self-start ${
+                  theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-50 hover:bg-gray-100'
+                }`}
+              >
+                <div className="w-full">
+                  <div className="relative aspect-[9/16] w-full max-w-sm mx-auto">
+                    <iframe
+                      src={`https://www.tiktok.com/player/v1/${extractTikTokVideoId(project.tiktokUrl || '')}`}
+                      className="absolute top-0 left-0 w-full h-full rounded-lg"
+                      frameBorder="0"
+                      allow="autoplay; fullscreen"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">
+                      <AutoTranslate 
+                        text={getBilingualText(project, 'title', currentLang)} 
+                        fieldName={`project-${project.id}-title`}
+                        onTranslate={(translated) => handleTranslateProject(project.id, 'title', translated)}
+                      />
+                    </h3>
+                    {localizedDescription && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                        {isExpanded(project.id) ? (
+                          <AutoTranslate 
+                            text={getBilingualText(project, 'description', currentLang)}
+                            fieldName={`project-${project.id}-description`}
+                            onTranslate={(translated) => handleTranslateProject(project.id, 'description', translated)}
+                          />
+                        ) : (
+                          truncateWords(getBilingualText(project, 'description', currentLang))
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {filteredProjects.length === 0 && (
         <div className="text-center py-12">
           <p className={`text-lg ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-            No projects found in this category.
+            {t('projects.noProjects')}
           </p>
         </div>
       )}
-      <InfoTooltip theme={theme} duration={5000} />
       <ScrollDownHint targetRef={sectionRef} theme={theme} />
     </section>
   );

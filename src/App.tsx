@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { useFirebaseData } from './context/FirebaseDataContext';
+import { useTranslation } from 'react-i18next';
 import Navigation from './components/Navigation';
 import Sidebar from './components/Sidebar';
 import Projects from './components/Projects';
@@ -15,6 +16,7 @@ function AppContent() {
     return saved || 'about';
   });
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const firebaseData = useFirebaseData();
 
   // Persist user section selection across visits
@@ -30,7 +32,7 @@ function AppContent() {
       <div className={`min-h-screen flex items-center justify-center ${theme}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>Loading portfolio...</p>
+          <p className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>{t('common.loading')}</p>
         </div>
       </div>
     );

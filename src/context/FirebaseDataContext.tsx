@@ -94,6 +94,8 @@ const defaultProfile: Profile = {
   location: 'Bandung, Indonesia',
   birthday: 'September 13, 2003',
   bio: 'Passionate frontend developer with expertise in React, TypeScript, and modern web technologies. I love creating beautiful and functional user interfaces.',
+  bioId: 'Mahasiswa Teknik Informatika dengan minat kuat dalam menggabungkan kecanggihan teknologi dengan efisiensi administrasi. Antusias pada teknologi, pengembangan web, administrasi, dan desain grafis.',
+  bioEn: 'Undergraduate Informatics Engineering student with a strong interest in combining technological sophistication with administrative efficiency. Passionate about technology, web development, administration, and graphic design.',
   imageUrl: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
   contactTitle: 'Get In Touch',
   contactMessage: "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!",

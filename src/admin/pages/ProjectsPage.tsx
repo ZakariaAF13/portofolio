@@ -4,24 +4,31 @@ import { FiPlus, FiEdit, FiTrash, FiSearch, FiX, FiUpload, FiMove, FiArrowUp, Fi
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import type { Project } from '../types';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import SuccessModal from '../components/SuccessModal';
 import { ImageCropper } from '../components/ImageCropper';
 import { updatePortfolioSettingsInFirestore, getPortfolioSettingsFromFirestore } from '../../utils/portfolioFirestore';
+import { translateText, detectLanguage } from '../../utils/translate';
 
 export default function ProjectsPage() {
   const { projects, addProject, updateProject, deleteProject } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState({
     title: '',
+    titleId: '',
+    titleEn: '',
     category: '',
     customCategory: '',
     status: 'Draft' as 'Published' | 'Draft',
     description: '',
+    descriptionId: '',
+    descriptionEn: '',
     technologies: '',
     imageUrl: '',
     tiktokUrl: '',
@@ -56,6 +63,8 @@ export default function ProjectsPage() {
   const [activeMoveCategory, setActiveMoveCategory] = useState<string>('all');
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
+
+  // Single-field workflow: auto-detect language on save
 
   const openMoveModal = async () => {
     try {
@@ -128,10 +137,14 @@ export default function ProjectsPage() {
       setEditingProject(project);
       setFormData({
         title: project.title,
+        titleId: (project as any).titleId || '',
+        titleEn: (project as any).titleEn || '',
         category: project.category,
         customCategory: '',
         status: project.status,
         description: project.description || '',
+        descriptionId: (project as any).descriptionId || '',
+        descriptionEn: (project as any).descriptionEn || '',
         technologies: project.technologies?.join(', ') || '',
         imageUrl: project.imageUrl || '',
         tiktokUrl: project.tiktokUrl || '',
@@ -143,10 +156,14 @@ export default function ProjectsPage() {
       setEditingProject(null);
       setFormData({
         title: '',
+        titleId: '',
+        titleEn: '',
         category: '',
         customCategory: '',
         status: 'Draft',
         description: '',
+        descriptionId: '',
+        descriptionEn: '',
         technologies: '',
         imageUrl: '',
         tiktokUrl: '',
@@ -163,10 +180,14 @@ export default function ProjectsPage() {
     setEditingProject(null);
     setFormData({
       title: '',
+      titleId: '',
+      titleEn: '',
       category: '',
       customCategory: '',
       status: 'Draft',
       description: '',
+      descriptionId: '',
+      descriptionEn: '',
       technologies: '',
       imageUrl: '',
       tiktokUrl: '',
@@ -218,6 +239,32 @@ export default function ProjectsPage() {
     e.preventDefault();
     
     try {
+      // Auto-detect and translate title and description
+      const titleLang = await detectLanguage(formData.title) || 'id';
+      const descLang = formData.description ? (await detectLanguage(formData.description) || 'id') : 'id';
+
+      let titleId = '';
+      let titleEn = '';
+      if (titleLang === 'id') {
+        titleId = formData.title;
+        titleEn = await translateText(formData.title, 'id', 'en');
+      } else {
+        titleEn = formData.title;
+        titleId = await translateText(formData.title, 'en', 'id');
+      }
+
+      let descriptionId = '';
+      let descriptionEn = '';
+      if (formData.description) {
+        if (descLang === 'id') {
+          descriptionId = formData.description;
+          descriptionEn = await translateText(formData.description, 'id', 'en');
+        } else {
+          descriptionEn = formData.description;
+          descriptionId = await translateText(formData.description, 'en', 'id');
+        }
+      }
+
       // Helpers to normalize TikTok URLs
       const tiktokLongRegex = /^https?:\/\/(www\.)?tiktok\.com\/@[^/]+\/video\/(\d+)/i;
       const tiktokShortRegex = /^https?:\/\/vt\.tiktok\.com\/.+/i;
@@ -244,38 +291,36 @@ export default function ProjectsPage() {
         }
       }
 
+      const payload = {
+        title: formData.title,
+        titleId: titleId || undefined,
+        titleEn: titleEn || undefined,
+        category: formData.category === 'Other' ? formData.customCategory : formData.category,
+        status: formData.status,
+        description: formData.description,
+        descriptionId: descriptionId || undefined,
+        descriptionEn: descriptionEn || undefined,
+        technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
+        imageUrl: formData.imageUrl,
+        tiktokUrl: normalizedTikTokUrl,
+        instagramReelsUrl: formData.instagramReelsUrl || undefined,
+        liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
+      };
+
       if (editingProject) {
-        await updateProject(editingProject.id, {
-          title: formData.title,
-          category: formData.category === 'Other' ? formData.customCategory : formData.category,
-          status: formData.status,
-          description: formData.description,
-          technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
-          imageUrl: formData.imageUrl,
-          tiktokUrl: normalizedTikTokUrl,
-          instagramReelsUrl: formData.instagramReelsUrl || undefined,
-          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
-        });
-        showSuccessModal('Project Updated!', `"${formData.title}" has been updated successfully.`);
+        await updateProject(editingProject.id, payload);
+        showSuccessModal(t('projectUpdatedTitle'), `"${formData.title}" ${t('projectUpdatedMsg')}`);
       } else {
         await addProject({
-          title: formData.title,
-          category: formData.category === 'Other' ? formData.customCategory : formData.category,
-          status: formData.status,
-          description: formData.description,
-          technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
-          imageUrl: formData.imageUrl,
-          tiktokUrl: normalizedTikTokUrl,
-          instagramReelsUrl: formData.instagramReelsUrl || undefined,
-          liveUrl: formData.category === 'TikTok' ? undefined : (formData.liveUrl || undefined),
+          ...payload,
           createdAt: new Date().toISOString().split('T')[0],
         });
-        showSuccessModal('Project Added!', `"${formData.title}" has been added successfully.`);
+        showSuccessModal(t('projectAddedTitle'), `"${formData.title}" ${t('projectAddedMsg')}`);
       }
       closeModal();
     } catch (error) {
       console.error('Error saving project:', error);
-      showSuccessModal('Error', 'Failed to save project. Please try again.', 'warning');
+      showSuccessModal(t('errorTitle'), t('projectSaveFailed'), 'warning');
     }
   };
 
@@ -304,11 +349,11 @@ export default function ProjectsPage() {
 
     try {
       await deleteProject(deleteModal.id);
-      showSuccessModal('Project Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+      showSuccessModal(t('projectDeletedTitle'), `"${deleteModal.name}" ${t('projectDeletedMsg')}`);
       closeDeleteModal();
     } catch (error) {
       console.error('Error deleting project:', error);
-      showSuccessModal('Error', 'Failed to delete project. Please try again.', 'warning');
+      showSuccessModal(t('errorTitle'), t('projectDeleteFailed'), 'warning');
       setDeleteModal(prev => ({ ...prev, isLoading: false }));
     }
   };
@@ -340,24 +385,24 @@ export default function ProjectsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Projects</h1>
-            <p className={`mt-1 text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your portfolio projects.</p>
+            <h1 className={`text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('projects')}</h1>
+            <p className={`mt-1 text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('projectsDesc')}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={openMoveModal}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              title="Reorder Projects & Categories"
+              title={t('reorderItems')}
             >
               <FiMove className="w-4 h-4" />
-              <span>Move</span>
+              <span>{t('reorderItems')}</span>
             </button>
             <button 
               onClick={() => openModal()}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <FiPlus className="w-4 h-4" />
-              <span>Add Project</span>
+              <span>{t('addProject')}</span>
             </button>
           </div>
         </div>
@@ -368,7 +413,7 @@ export default function ProjectsPage() {
               <FiSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search projects..."
+                placeholder={t('searchProjects')}
                 className={`pl-10 pr-4 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${isLightMode ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'}`}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -508,6 +553,9 @@ export default function ProjectsPage() {
                       />
                     </div>
 
+                    {/* Localized Titles removed: single input only */}
+
+                    {/* Category */}
                     <div>
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         Category
@@ -584,6 +632,8 @@ export default function ProjectsPage() {
                         placeholder="Project description"
                       />
                     </div>
+
+                    {/* Localized Descriptions removed: single input only */}
 
                     <div>
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -889,11 +939,11 @@ export default function ProjectsPage() {
                           for (const u of updates) {
                             await updateProject(u.id, { order_index: u.order_index });
                           }
-                          showSuccessModal('Move Saved', 'Project and category positions have been updated.');
+                          showSuccessModal(t('moveSaved'), t('projectMoveSavedDesc'));
                           closeMoveModal();
                         } catch (err) {
                           console.error('Error saving order:', err);
-                          showSuccessModal('Error', 'Failed to save new positions. Please try again.', 'warning');
+                          showSuccessModal(t('errorTitle'), t('moveSaveFailed'), 'warning');
                         }
                       }}
                       className="flex-1 bg-blue-600 text-white py-2.5 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors font-medium"

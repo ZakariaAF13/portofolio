@@ -4,12 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminTheme } from '../context/AdminThemeContext';
 import type { Skill, Experience, Education } from '../types';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
+import { useLanguage } from '../context/LanguageContext';
 import { updateKnowledgeInFirestore } from '../../utils/portfolioFirestore';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import SuccessModal from '../components/SuccessModal';
 
 export default function ResumePage() {
   const { isLightMode } = useAdminTheme();
+  const { t } = useLanguage();
   const { skills, addSkill, updateSkill, deleteSkill, knowledge, addKnowledge, updateKnowledge, deleteKnowledge, experiences, addExperience, updateExperience, deleteExperience, educations, addEducation, updateEducation, deleteEducation, refreshData } = useFirebaseData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -183,15 +185,15 @@ export default function ResumePage() {
     try {
       if (editingSkill) {
         await updateSkill(editingSkill.id, skillPayload);
-        showSuccessModal('Skill Updated!', `"${formData.name}" has been updated successfully.`);
+        showSuccessModal(t('skillUpdated'), `"${formData.name}" ${t('skillUpdatedDesc')}`);
       } else {
         await addSkill(skillPayload);
-        showSuccessModal('Skill Added!', `"${formData.name}" has been added successfully.`);
+        showSuccessModal(t('skillAdded'), `"${formData.name}" ${t('skillAddedDesc')}`);
       }
       closeModal();
     } catch (error) {
       console.error('Error saving skill:', error);
-      showSuccessModal('Error', 'Failed to save skill. Please try again.', 'warning');
+      showSuccessModal(t('errorTitle'), t('skillSaveFailed'), 'warning');
     }
   };
 
@@ -224,25 +226,25 @@ export default function ResumePage() {
       switch (deleteModal.type) {
         case 'skill':
           await deleteSkill(deleteModal.id as string);
-          showSuccessModal('Skill Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          showSuccessModal(t('skillDeleted'), `"${deleteModal.name}" ${t('skillDeletedDesc')}`);
           break;
         case 'knowledge':
           await deleteKnowledge(deleteModal.id as number);
-          showSuccessModal('Knowledge Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          showSuccessModal(t('knowledgeDeleted'), `"${deleteModal.name}" ${t('knowledgeDeletedDesc')}`);
           break;
         case 'experience':
           await deleteExperience(deleteModal.id as string);
-          showSuccessModal('Experience Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          showSuccessModal(t('experienceDeleted'), `"${deleteModal.name}" ${t('experienceDeletedDesc')}`);
           break;
         case 'education':
           await deleteEducation(deleteModal.id as string);
-          showSuccessModal('Education Deleted!', `"${deleteModal.name}" has been deleted successfully.`);
+          showSuccessModal(t('educationDeleted'), `"${deleteModal.name}" ${t('educationDeletedDesc')}`);
           break;
       }
       closeDeleteModal();
     } catch (error) {
       console.error('Error deleting item:', error);
-      showSuccessModal('Error', 'Failed to delete item. Please try again.', 'warning');
+      showSuccessModal(t('errorTitle'), t('itemDeleteFailed'), 'warning');
       setDeleteModal(prev => ({ ...prev, isLoading: false }));
     }
   };
@@ -936,11 +938,11 @@ export default function ResumePage() {
                           // Using context's setter through updateKnowledge of provider API by replacing list
                           // But provider exposes updateKnowledge(index, item). We'll call firestore directly above and then refreshData.
                           await refreshData();
-                          showSuccessModal('Move Saved', 'Resume item positions have been updated.');
+                          showSuccessModal(t('moveSaved'), t('resumeMoveSavedDesc'));
                           closeMoveModal();
                         } catch (err) {
                           console.error('Error saving resume order:', err);
-                          showSuccessModal('Error', 'Failed to save new positions. Please try again.', 'warning');
+                          showSuccessModal(t('errorTitle'), t('moveSaveFailed'), 'warning');
                         }
                       }}
                       className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
@@ -1003,17 +1005,17 @@ export default function ResumePage() {
                       try {
                         if (editingExperience) {
                           await updateExperience(editingExperience.id, payload);
-                          showSuccessModal('Experience Updated!', `"${experienceFormData.title}" has been updated successfully.`);
+                          showSuccessModal(t('experienceUpdated'), `"${experienceFormData.title}" ${t('experienceUpdatedDesc')}`);
                         } else {
                           await addExperience(payload);
-                          showSuccessModal('Experience Added!', `"${experienceFormData.title}" has been added successfully.`);
+                          showSuccessModal(t('experienceAdded'), `"${experienceFormData.title}" ${t('experienceAddedDesc')}`);
                         }
                         setIsExperienceModalOpen(false);
                         setEditingExperience(null);
                         setExperienceFormData({ title: '', company: '', period: '', location: '', description: '' });
                       } catch (error) {
                         console.error('Error saving experience:', error);
-                        showSuccessModal('Error', 'Failed to save experience. Please try again.', 'warning');
+                        showSuccessModal(t('errorTitle'), t('experienceSaveFailed'), 'warning');
                       }
                     }}
                     className="space-y-4"
@@ -1147,17 +1149,17 @@ export default function ResumePage() {
                       try {
                         if (editingEducation) {
                           await updateEducation(editingEducation.id, payload);
-                          showSuccessModal('Education Updated!', `"${educationFormData.degree}" has been updated successfully.`);
+                          showSuccessModal(t('educationUpdated'), `"${educationFormData.degree}" ${t('educationUpdatedDesc')}`);
                         } else {
                           await addEducation(payload);
-                          showSuccessModal('Education Added!', `"${educationFormData.degree}" has been added successfully.`);
+                          showSuccessModal(t('educationAdded'), `"${educationFormData.degree}" ${t('educationAddedDesc')}`);
                         }
                         setIsEducationModalOpen(false);
                         setEditingEducation(null);
                         setEducationFormData({ degree: '', institution: '', period: '', location: '' });
                       } catch (error) {
                         console.error('Error saving education:', error);
-                        showSuccessModal('Error', 'Failed to save education. Please try again.', 'warning');
+                        showSuccessModal(t('errorTitle'), t('educationSaveFailed'), 'warning');
                       }
                     }}
                     className="space-y-4"

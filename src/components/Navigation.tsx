@@ -1,5 +1,5 @@
-import React from 'react';
 import { User, FileText, Briefcase, MessageSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Section, Theme } from '../types';
 
 interface NavigationProps {
@@ -9,13 +9,14 @@ interface NavigationProps {
 }
 
 const navItems = [
-  { id: 'about' as Section, icon: User, label: 'About' },
-  { id: 'resume' as Section, icon: FileText, label: 'Resume' },
-  { id: 'project' as Section, icon: Briefcase, label: 'Project' },
-  { id: 'contact' as Section, icon: MessageSquare, label: 'Contact' }
+  { id: 'about' as Section, icon: User },
+  { id: 'resume' as Section, icon: FileText },
+  { id: 'project' as Section, icon: Briefcase },
+  { id: 'contact' as Section, icon: MessageSquare }
 ];
 
 export default function Navigation({ activeSection, onSectionChange, theme }: NavigationProps) {
+  const { t } = useTranslation();
   const cardClass = theme === 'dark' 
     ? 'bg-slate-800 border border-slate-700' 
     : 'bg-white';
@@ -25,6 +26,11 @@ export default function Navigation({ activeSection, onSectionChange, theme }: Na
       {navItems.map((item) => {
         const IconComponent = item.icon;
         const isActive = activeSection === item.id;
+        const label =
+          item.id === 'about' ? t('nav.about') :
+          item.id === 'resume' ? t('nav.resume') :
+          item.id === 'project' ? t('nav.projects') :
+          t('nav.contact');
         
         return (
           <button
@@ -39,7 +45,7 @@ export default function Navigation({ activeSection, onSectionChange, theme }: Na
             }`}
           >
             <IconComponent size={18} />
-            {item.label}
+            {label}
           </button>
         );
       })}

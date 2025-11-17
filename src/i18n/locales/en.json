@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "resume": "Resume",
+    "projects": "Projects",
+    "contact": "Contact"
+  },
+  "sidebar": {
+    "phone": "Phone",
+    "email": "Email",
+    "location": "Location",
+    "birthday": "Birthday",
+    "downloadCV": "Download CV"
+  },
+  "hero": {
+    "greeting": "Hi, I'm",
+    "role": "Full Stack Developer",
+    "description": "I build amazing web experiences",
+    "viewProjects": "View Projects",
+    "contact": "Get in Touch"
+  },
+  "about": {
+    "title": "About",
+    "subtitle": "Get to know me",
+    "whatIDo": "What I Do",
+    "noItems": "No services available",
+    "fallbackBio": "Fullstack Web Developer passionate about building end-to-end web applications. Skilled in both frontend and backend using frameworks and technologies such as React.js, Next.js, Express.js, Laravel, Tailwind, and Bootstrap. Experienced in designing responsive user interfaces, developing robust server-side logic and APIs, as well as editing photos, videos, and logos. Adept at combining technological innovation with administrative efficiency to deliver scalable, user-friendly, and creative digital solutions."
+  },
+  "resume": {
+    "title": "Resume",
+    "subtitle": "My professional journey",
+    "skills": "Skills",
+    "knowledge": "Knowledge",
+    "experience": "Experience",
+    "education": "Education",
+    "noSkills": "No skills added yet",
+    "noExperience": "No experience added yet",
+    "noEducation": "No education added yet",
+    "present": "Present",
+    "level": "Level",
+    "category": "Category"
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "My recent work",
+    "allProjects": "All Projects",
+    "categories": {
+      "all": "All",
+      "web": "Web",
+      "mobile": "Mobile",
+      "design": "Design",
+      "other": "Other"
+    },
+    "viewLive": "View Live",
+    "viewCode": "View Code",
+    "noProjects": "No projects available",
+    "featured": "Featured",
+    "clickToReadMore": "Click to read more",
+    "clickToCollapse": "Click to collapse",
+    "clickDetails": "Click for details",
+    "status": {
+      "completed": "Completed",
+      "in_progress": "In Progress",
+      "planned": "Planned"
+    }
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Let's work together",
+    "name": "Name",
+    "namePlaceholder": "Your Name",
+    "email": "Email",
+    "emailPlaceholder": "your.email@example.com",
+    "message": "Message",
+    "messagePlaceholder": "Your message here...",
+    "send": "Send Message",
+    "sending": "Sending...",
+    "success": "Message sent successfully!",
+    "error": "Failed to send message. Please try again.",
+    "phone": "Phone",
+    "location": "Location",
+    "emailAddress": "Email Address"
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "madeWith": "Made with",
+    "by": "by"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "viewMore": "View More",
+    "viewLess": "View Less",
+    "readMore": "Read More",
+    "learnMore": "Learn More",
+    "getStarted": "Get Started",
+    "backToHome": "Back to Home",
+    "notFound": "Page Not Found",
+    "comingSoon": "Coming Soon"
+  }
+}

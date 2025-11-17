@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "home": "Beranda",
+    "about": "Tentang",
+    "resume": "Resume",
+    "projects": "Proyek",
+    "contact": "Kontak"
+  },
+  "sidebar": {
+    "phone": "Telepon",
+    "email": "Email",
+    "location": "Lokasi",
+    "birthday": "Tanggal Lahir",
+    "downloadCV": "Unduh CV"
+  },
+  "hero": {
+    "greeting": "Hai, Saya",
+    "role": "Full Stack Developer",
+    "description": "Saya membuat pengalaman web yang luar biasa",
+    "viewProjects": "Lihat Proyek",
+    "contact": "Hubungi Saya"
+  },
+  "about": {
+    "title": "Tentang",
+    "subtitle": "Kenali saya lebih dekat",
+    "whatIDo": "Apa Yang Saya Lakukan",
+    "noItems": "Belum ada layanan tersedia",
+    "fallbackBio": "Fullstack Web Developer yang berfokus membangun aplikasi web end-to-end. Terampil pada frontend dan backend dengan React.js, Next.js, Express.js, Laravel, Tailwind, dan Bootstrap. Berpengalaman membuat antarmuka responsif, API server-side yang andal, serta editing foto, video, dan logo. Siap menggabungkan inovasi teknologi dan efisiensi administratif untuk menghadirkan solusi digital yang skalabel, ramah pengguna, dan kreatif."
+  },
+  "resume": {
+    "title": "Resume",
+    "subtitle": "Perjalanan profesional saya",
+    "skills": "Keterampilan",
+    "knowledge": "Pengetahuan",
+    "experience": "Pengalaman",
+    "education": "Pendidikan",
+    "noSkills": "Belum ada keterampilan",
+    "noExperience": "Belum ada pengalaman",
+    "noEducation": "Belum ada pendidikan",
+    "present": "Sekarang",
+    "level": "Tingkat",
+    "category": "Kategori"
+  },
+  "projects": {
+    "title": "Proyek",
+    "subtitle": "Karya terbaru saya",
+    "allProjects": "Semua Proyek",
+    "categories": {
+      "all": "Semua",
+      "web": "Web",
+      "mobile": "Mobile",
+      "design": "Desain",
+      "other": "Lainnya"
+    },
+    "viewLive": "Lihat Demo",
+    "viewCode": "Lihat Kode",
+    "noProjects": "Belum ada proyek",
+    "featured": "Unggulan",
+    "clickToReadMore": "Klik untuk baca selengkapnya",
+    "clickToCollapse": "Klik untuk tutup",
+    "clickDetails": "Klik untuk detail",
+    "status": {
+      "completed": "Selesai",
+      "in_progress": "Dalam Proses",
+      "planned": "Direncanakan"
+    }
+  },
+  "contact": {
+    "title": "Hubungi Saya",
+    "subtitle": "Mari bekerja sama",
+    "name": "Nama",
+    "namePlaceholder": "Nama Anda",
+    "email": "Email",
+    "emailPlaceholder": "email.anda@contoh.com",
+    "message": "Pesan",
+    "messagePlaceholder": "Pesan Anda di sini...",
+    "send": "Kirim Pesan",
+    "sending": "Mengirim...",
+    "success": "Pesan berhasil dikirim!",
+    "error": "Gagal mengirim pesan. Silakan coba lagi.",
+    "phone": "Telepon",
+    "location": "Lokasi",
+    "emailAddress": "Alamat Email"
+  },
+  "footer": {
+    "rights": "Hak cipta dilindungi",
+    "madeWith": "Dibuat dengan",
+    "by": "oleh"
+  },
+  "common": {
+    "loading": "Memuat...",
+    "error": "Error",
+    "retry": "Coba Lagi",
+    "close": "Tutup",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "edit": "Edit",
+    "delete": "Hapus",
+    "add": "Tambah",
+    "update": "Perbarui",
+    "search": "Cari",
+    "filter": "Filter",
+    "sort": "Urutkan",
+    "viewMore": "Lihat Lebih Banyak",
+    "viewLess": "Lihat Lebih Sedikit",
+    "readMore": "Baca Selengkapnya",
+    "learnMore": "Pelajari Lebih Lanjut",
+    "getStarted": "Mulai",
+    "backToHome": "Kembali ke Beranda",
+    "notFound": "Halaman Tidak Ditemukan",
+    "comingSoon": "Segera Hadir"
+  }
+}

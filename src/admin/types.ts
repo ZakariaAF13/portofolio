@@ -1,12 +1,16 @@
 export interface Project {
   id: string;
   title: string;
+  titleId?: string;
+  titleEn?: string;
   category: string;
   status: 'Published' | 'Draft';
   createdAt: string;
   // Optional manual sort index (lower comes first). When absent, fallback to createdAt desc.
   order_index?: number;
   description?: string;
+  descriptionId?: string;
+  descriptionEn?: string;
   imageUrl?: string;
   technologies?: string[];
   liveUrl?: string;
@@ -38,11 +42,15 @@ export interface Profile {
   id: string;
   name: string;
   title: string;
+  titleId?: string;
+  titleEn?: string;
   email: string;
   phone: string;
   location: string;
   birthday: string;
   bio?: string;
+  bioId?: string;
+  bioEn?: string;
   imageUrl?: string;
   address?: string;
   website?: string;
@@ -56,7 +64,11 @@ export interface Profile {
   discord?: string;
   whatsapp?: string;
   contactTitle?: string;
+  contactTitleId?: string;
+  contactTitleEn?: string;
   contactMessage?: string;
+  contactMessageId?: string;
+  contactMessageEn?: string;
   cvUrl?: string;
   socialMediaFields?: SocialMediaField[];
 }
@@ -64,7 +76,11 @@ export interface Profile {
 export interface WhatIDoItem {
   id: string;
   title: string;
+  titleId?: string;
+  titleEn?: string;
   description: string;
+  descriptionId?: string;
+  descriptionEn?: string;
   icon: string;
   iconColor: string;
   backgroundColor: string;

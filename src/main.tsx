@@ -6,21 +6,25 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Admin from './admin/Admin';
 import { FirebaseAuthProvider } from './context/FirebaseAuthContext';
 import { FirebaseDataProvider } from './context/FirebaseDataContext';
+import { LanguageProvider } from './context/LanguageContext';
 import './config/firebase';
 import './examples/firestoreExamples';
+import './i18n/config'; // Initialize react-i18next
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <FirebaseAuthProvider>
-      <FirebaseDataProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/admin/*" element={<Admin />} />
-            <Route path="/" element={<App />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </FirebaseDataProvider>
-    </FirebaseAuthProvider>
+    <LanguageProvider>
+      <FirebaseAuthProvider>
+        <FirebaseDataProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/admin/*" element={<Admin />} />
+              <Route path="/" element={<App />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </FirebaseDataProvider>
+      </FirebaseAuthProvider>
+    </LanguageProvider>
   </StrictMode>
 );

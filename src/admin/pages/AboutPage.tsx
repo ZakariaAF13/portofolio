@@ -27,9 +27,12 @@ import {
 } from 'lucide-react';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { motion } from 'framer-motion';
+import { detectLanguage } from '../../utils/detectLanguage';
+import { translateText } from '../../utils/geminiTranslate';
 import type { WhatIDoItem } from '../types';
 import SuccessModal from '../components/SuccessModal';
-import { motion } from 'framer-motion';
 
 const iconOptions = [
   { name: 'Code', icon: Code },
@@ -226,6 +229,7 @@ const backgroundOptions = [
 export default function AboutPage() {
   const { profile, updateProfile, whatIDoItems, addWhatIDoItem, updateWhatIDoItem, deleteWhatIDoItem, refreshData } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [isWhatIDoModalOpen, setIsWhatIDoModalOpen] = useState(false);
   const [editingWhatIDoItem, setEditingWhatIDoItem] = useState<WhatIDoItem | null>(null);
@@ -236,6 +240,7 @@ export default function AboutPage() {
     iconColor: '#3B82F6',
     backgroundColor: '#EFF6FF'
   });
+  const [isWhatIDoTranslating, setIsWhatIDoTranslating] = useState(false);
 
   // Success modal state
   const [successModal, setSuccessModal] = useState({
@@ -261,6 +266,8 @@ export default function AboutPage() {
     setIsMoveOpen(true);
   };
 
+  // Single-field workflow: language auto-detected on save
+
   const closeMoveModal = () => setIsMoveOpen(false);
 
   const moveInArray = <T,>(arr: T[], index: number, direction: 'up' | 'down'): T[] => {
@@ -282,16 +289,36 @@ export default function AboutPage() {
   const [formData, setFormData] = useState({
     bio: profile?.bio || '',
   });
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsTranslating(true);
     try {
-      await updateProfile(formData);
+      // Auto-detect language and translate with Gemini
+      const detectedLang = detectLanguage(formData.bio);
+      const targetLang = detectedLang === 'id' ? 'en' : 'id';
+      
+      // Translate to other language
+      const translated = await translateText(formData.bio, detectedLang, targetLang);
+      
+      // Save both languages
+      const bioId = detectedLang === 'id' ? formData.bio : translated;
+      const bioEn = detectedLang === 'en' ? formData.bio : translated;
+      
+      await updateProfile({
+        bio: formData.bio,
+        bioId,
+        bioEn
+      });
+      
       setIsEditing(false);
-      showSuccessModal('About Updated!', 'Your about information has been updated successfully.');
+      setIsTranslating(false);
+      showSuccessModal(t('aboutUpdatedTitle'), t('aboutUpdatedDesc'));
     } catch (error) {
       console.error('Error updating about:', error);
-      showSuccessModal('Error', 'Failed to update about information. Please try again.', 'warning');
+      setIsTranslating(false);
+      showSuccessModal(t('errorTitle'), t('aboutUpdateFailed'), 'warning');
     }
   };
 
@@ -304,25 +331,56 @@ export default function AboutPage() {
 
   const handleWhatIDoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsWhatIDoTranslating(true);
     
     try {
+      // Auto-detect and translate with Gemini
+      const titleLang = detectLanguage(whatIDoFormData.title);
+      const descLang = detectLanguage(whatIDoFormData.description);
+      
+      const titleTargetLang = titleLang === 'id' ? 'en' : 'id';
+      const descTargetLang = descLang === 'id' ? 'en' : 'id';
+      
+      const translatedTitle = await translateText(whatIDoFormData.title, titleLang, titleTargetLang);
+      const translatedDesc = await translateText(whatIDoFormData.description, descLang, descTargetLang);
+      
+      const payload = {
+        title: whatIDoFormData.title,
+        titleId: titleLang === 'id' ? whatIDoFormData.title : translatedTitle,
+        titleEn: titleLang === 'en' ? whatIDoFormData.title : translatedTitle,
+        description: whatIDoFormData.description,
+        descriptionId: descLang === 'id' ? whatIDoFormData.description : translatedDesc,
+        descriptionEn: descLang === 'en' ? whatIDoFormData.description : translatedDesc,
+        icon: whatIDoFormData.icon,
+        iconColor: whatIDoFormData.iconColor,
+        backgroundColor: whatIDoFormData.backgroundColor,
+      };
+
       if (editingWhatIDoItem) {
-        await updateWhatIDoItem(editingWhatIDoItem.id, whatIDoFormData);
-        showSuccessModal('Item Updated!', `"${whatIDoFormData.title}" has been updated successfully.`);
+        await updateWhatIDoItem(editingWhatIDoItem.id, payload);
+        showSuccessModal(t('itemUpdatedTitle'), `"${whatIDoFormData.title}" ${t('itemUpdatedMsg')}`);
       } else {
         await addWhatIDoItem({
-          ...whatIDoFormData,
+          ...payload,
           createdAt: new Date().toISOString().split('T')[0]
         });
-        showSuccessModal('Item Added!', `"${whatIDoFormData.title}" has been added successfully.`);
+        showSuccessModal(t('itemAddedTitle'), `"${whatIDoFormData.title}" ${t('itemAddedMsg')}`);
       }
       
       setIsWhatIDoModalOpen(false);
       setEditingWhatIDoItem(null);
-      setWhatIDoFormData({ title: '', description: '', icon: 'FiCode', iconColor: '#3B82F6', backgroundColor: '#EFF6FF' });
+      setIsWhatIDoTranslating(false);
+      setWhatIDoFormData({ 
+        title: '', 
+        description: '', 
+        icon: 'Code', 
+        iconColor: '#3B82F6', 
+        backgroundColor: '#EFF6FF' 
+      });
     } catch (error) {
       console.error('Error saving what I do item:', error);
-      showSuccessModal('Error', 'Failed to save item. Please try again.', 'warning');
+      setIsWhatIDoTranslating(false);
+      showSuccessModal(t('errorTitle'), t('itemSaveFailed'), 'warning');
     }
   };
 
@@ -351,13 +409,13 @@ export default function AboutPage() {
   };
 
   const handleDeleteWhatIDo = async (id: string, title: string) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
+    if (window.confirm(t('confirmDelete'))) {
       try {
         await deleteWhatIDoItem(id);
-        showSuccessModal('Item Deleted!', `"${title}" has been deleted successfully.`);
+        showSuccessModal(t('itemDeletedTitle'), `"${title}" ${t('itemDeletedMsg')}`);
       } catch (error) {
         console.error('Error deleting what I do item:', error);
-        showSuccessModal('Error', 'Failed to delete item. Please try again.', 'warning');
+        showSuccessModal(t('errorTitle'), t('itemDeleteFailed'), 'warning');
       }
     }
   };
@@ -391,9 +449,9 @@ export default function AboutPage() {
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className={`text-xl sm:text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>About Section</h1>
+              <h1 className={`text-xl sm:text-2xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('aboutSection')}</h1>
               <p className={`mt-0.5 sm:mt-1 text-xs sm:text-sm ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                Manage your personal information and bio for the About section
+                {t('aboutSectionDesc')}
               </p>
             </div>
             {!isEditing && (
@@ -402,7 +460,7 @@ export default function AboutPage() {
                 className="w-full sm:w-auto px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
                 <FiUser className="w-4 h-4" />
-                <span>Edit About</span>
+                <span>{t('editAbout')}</span>
               </button>
             )}
           </div>
@@ -419,18 +477,28 @@ export default function AboutPage() {
             /* Edit Form */
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="space-y-6">
-                {/* Bio */}
+                {/* Bio - Single Input (Auto-translate with Gemini) */}
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>
-                    About Description
+                    {t('bio')}
                   </label>
                   <textarea
-                    rows={6}
+                    rows={8}
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
-                    placeholder="Write a brief description about yourself, your experience, and your passion..."
+                    placeholder={t('bioPlaceholder') || "Write your bio in Indonesian or English..."}
+                    required
                   />
+                  <p className={`mt-2 text-xs ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    🤖 <strong>Auto-translate dengan Gemini:</strong> Tulis dalam bahasa apapun (ID/EN), akan otomatis diterjemahkan saat disimpan. Unlimited characters!
+                  </p>
+                  {isTranslating && (
+                    <p className="mt-2 text-sm text-blue-600 flex items-center gap-2">
+                      <span className="animate-spin">⚙️</span>
+                      Translating with Gemini AI...
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -441,14 +509,14 @@ export default function AboutPage() {
                   className="flex-1 bg-blue-600 text-white py-2.5 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
                 >
                   <FiSave className="w-4 h-4" />
-                  <span>Save Changes</span>
+                  <span>{t('saveChanges')}</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
                   className={`flex-1 py-2.5 px-4 text-sm sm:text-base rounded-lg transition-colors font-medium ${isLightMode ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-slate-600 text-gray-300 hover:bg-slate-500'}`}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               </div>
             </form>
@@ -458,33 +526,63 @@ export default function AboutPage() {
 
               {/* Bio Section */}
               <div className="mb-8">
-                <h3 className={`text-lg font-semibold mb-4 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>About Me</h3>
+                <h3 className={`text-lg font-semibold mb-4 ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('bio')}</h3>
                 <div className={`prose max-w-none ${isLightMode ? 'prose-gray' : 'prose-invert'}`}>
-                  <p className={`leading-relaxed ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
-                    {profile?.bio || 'Add your bio description here. This will appear in the About section of your portfolio.'}
-                  </p>
+                  <div className={`leading-relaxed space-y-4 ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                    {/* Indonesian Version */}
+                    {(profile as any)?.bioId && (
+                      <div className={`p-4 rounded-lg ${isLightMode ? 'bg-blue-50' : 'bg-blue-900/20'}`}>
+                        <p className={`text-xs font-semibold mb-2 flex items-center gap-2 ${isLightMode ? 'text-blue-700' : 'text-blue-400'}`}>
+                          🇮🇩 Bahasa Indonesia
+                        </p>
+                        <p className={`${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>{(profile as any).bioId}</p>
+                      </div>
+                    )}
+                    
+                    {/* English Version */}
+                    {(profile as any)?.bioEn && (
+                      <div className={`p-4 rounded-lg ${isLightMode ? 'bg-green-50' : 'bg-green-900/20'}`}>
+                        <p className={`text-xs font-semibold mb-2 flex items-center gap-2 ${isLightMode ? 'text-green-700' : 'text-green-400'}`}>
+                          🇬🇧 English
+                        </p>
+                        <p className={`${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>{(profile as any).bioEn}</p>
+                      </div>
+                    )}
+
+                    {/* Fallback if no bilingual data */}
+                    {!(profile as any)?.bioId && !(profile as any)?.bioEn && profile?.bio && (
+                      <p>{profile.bio}</p>
+                    )}
+
+                    {/* Empty state */}
+                    {!(profile as any)?.bioId && !(profile as any)?.bioEn && !profile?.bio && (
+                      <p className={`italic ${isLightMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Belum ada bio. Klik tombol Edit untuk menambahkan.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* What I Do Section */}
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-                  <h3 className={`text-base sm:text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>What I Do</h3>
+                  <h3 className={`text-base sm:text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('whatIDo')}</h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={openMoveModal}
                       className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-purple-600 text-white text-xs sm:text-sm rounded-lg hover:bg-purple-700 transition-colors"
-                      title="Reorder What I Do"
+                      title={t('reorderItems')}
                     >
                       <FiMove className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span>Move</span>
+                      <span>{t('reorderItems')}</span>
                     </button>
                     <button
                       onClick={() => setIsWhatIDoModalOpen(true)}
                       className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <FiPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span>Add Item</span>
+                      <span>{t('addNewItem')}</span>
                     </button>
                   </div>
                 </div>
@@ -539,13 +637,13 @@ export default function AboutPage() {
                 
                 {whatIDoItems.length === 0 && (
                   <div className={`text-center py-8 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    <p className="mb-4">No "What I Do" items yet.</p>
+                    <p className="mb-4">{t('noItems')}</p>
                     <button
                       onClick={() => setIsWhatIDoModalOpen(true)}
                       className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <FiPlus className="mr-2" />
-                      Add First Item
+                      {t('addNewItem')}
                     </button>
                   </div>
                 )}
@@ -565,7 +663,7 @@ export default function AboutPage() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className={`text-xl font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>
-                    {editingWhatIDoItem ? 'Edit Item' : 'Add New Item'}
+                    {editingWhatIDoItem ? t('editItem') : t('addNewItem')}
                   </h2>
                   <button
                     onClick={resetWhatIDoForm}
@@ -576,35 +674,48 @@ export default function AboutPage() {
                 </div>
 
                 <form onSubmit={handleWhatIDoSubmit} className="space-y-4">
+                  {/* Title - Single Input (Auto-translate) */}
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>
-                      Title
+                      {t('title')}
                     </label>
                     <input
                       type="text"
                       value={whatIDoFormData.title}
                       onChange={(e) => setWhatIDoFormData({ ...whatIDoFormData, title: e.target.value })}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      placeholder="e.g., UI/UX Design or Desain UI/UX"
                       required
                     />
                   </div>
 
+                  {/* Description - Single Input (Auto-translate) */}
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>
-                      Description
+                      {t('description')}
                     </label>
                     <textarea
                       value={whatIDoFormData.description}
                       onChange={(e) => setWhatIDoFormData({ ...whatIDoFormData, description: e.target.value })}
                       rows={3}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isLightMode ? 'border-gray-300 bg-white text-gray-900' : 'border-slate-600 bg-slate-700 text-white'}`}
+                      placeholder={t('descriptionPlaceholder') || "Write in Indonesian or English..."}
                       required
                     />
+                    <p className={`mt-1.5 text-xs ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      🤖 Auto-translate: Tulis dalam ID/EN, otomatis diterjemahkan dengan Gemini AI
+                    </p>
+                    {isWhatIDoTranslating && (
+                      <p className="mt-2 text-sm text-blue-600 flex items-center gap-2">
+                        <span className="animate-spin">⚙️</span>
+                        Translating...
+                      </p>
+                    )}
                   </div>
 
                   <div>
                     <label className={`block text-sm font-medium mb-3 ${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>
-                      Icon
+                      {t('icon')}
                     </label>
                     <div className={`grid grid-cols-6 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3 ${isLightMode ? 'border-gray-300' : 'border-slate-600'}`}>
                       {iconOptions.map((iconOption) => {
@@ -627,13 +738,13 @@ export default function AboutPage() {
                       })}
                     </div>
                     <p className={`text-xs mt-2 ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      Selected: {whatIDoFormData.icon}
+                      {t('selected')}: {whatIDoFormData.icon}
                     </p>
                   </div>
 
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>
-                      Icon Color
+                      {t('iconColor')}
                     </label>
                     <div className="grid grid-cols-4 gap-2">
                       {colorOptions.map((color) => (
@@ -656,7 +767,7 @@ export default function AboutPage() {
 
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isLightMode ? 'text-gray-700' : 'text-gray-300'}`}>
-                      Background Color
+                      {t('backgroundColor')}
                     </label>
                     <div className="grid grid-cols-4 gap-2">
                       {backgroundOptions.map((bg) => (
@@ -683,14 +794,14 @@ export default function AboutPage() {
                       className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <FiSave className="mr-2" />
-                      {editingWhatIDoItem ? 'Update' : 'Create'}
+                      {editingWhatIDoItem ? t('update') : t('create')}
                     </button>
                     <button
                       type="button"
                       onClick={resetWhatIDoForm}
                       className={`px-4 py-2 rounded-lg transition-colors ${isLightMode ? 'text-gray-700 bg-gray-100 hover:bg-gray-200' : 'text-gray-300 bg-slate-700 hover:bg-slate-600'}`}
                     >
-                      Cancel
+                      {t('cancel')}
                     </button>
                   </div>
                 </form>
@@ -720,7 +831,7 @@ export default function AboutPage() {
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className={`text-xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Move What I Do</h2>
+                  <h2 className={`text-xl font-bold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('reorderItems')}</h2>
                   <button onClick={closeMoveModal} className={`${isLightMode ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 hover:text-gray-100'}`}>
                     <FiX size={22} />
                   </button>

@@ -24,8 +24,10 @@ import {
   Shuffle, FastForward, Rewind, Circle, StopCircle, PlayCircle
 } from 'lucide-react';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import ScrollDownHint from './ScrollDownHint';
 import { useFirebaseData } from '../context/FirebaseDataContext';
+import { getBilingualText } from '../utils/bilingual';
 import type { Theme } from '../types';
 
 interface AboutProps {
@@ -62,6 +64,8 @@ const iconMap = {
 export default function About({ theme }: AboutProps) {
   const { profile, whatIDoItems } = useFirebaseData();
   const sectionRef = useRef<HTMLElement>(null);
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
   
   const cardClass = theme === 'dark' 
     ? 'bg-slate-800 border border-slate-700' 
@@ -75,30 +79,34 @@ export default function About({ theme }: AboutProps) {
     <section ref={sectionRef} className={`${cardClass} relative rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
         <h2 className={`text-3xl font-bold ${textClass}`}>
-          About
+          {t('about.title')}
         </h2>
         <div className="h-1 bg-blue-600 rounded-full w-full sm:flex-grow"></div>
       </div>
       
       <div className="space-y-6 mb-10">
-        {profile?.bio ? (
-          <div className={`${bodyTextClass} leading-relaxed text-base max-w-4xl`}>
-            {profile.bio.split('\n').map((paragraph, index) => (
-              <p key={index} className="mb-4 last:mb-0">
-                {paragraph}
+        {(() => {
+          const displayedBio = getBilingualText(profile, 'bio', currentLang);
+          if (!displayedBio) {
+            return (
+              <p className={`${bodyTextClass} leading-relaxed text-base max-w-4xl`}>
+                {t('about.fallbackBio')}
               </p>
-            ))}
-          </div>
-        ) : (
-          <>
-            <p className={`${bodyTextClass} leading-relaxed text-base max-w-4xl`}>
-            Fullstack Web Developer passionate about building end-to-end web applications. Skilled in both frontend and backend development using frameworks and technologies such as React.js, Next.js, Express.js, Laravel, Tailwind, and Bootstrap. Experienced in designing responsive user interfaces, developing robust server-side logic and APIs, as well as editing photos, videos, and logos. Adept at combining technological innovation with administrative efficiency to deliver scalable, user-friendly, and creative digital solutions.
-            </p>
-          </>
-        )}
+            );
+          }
+          return (
+            <div className={`${bodyTextClass} leading-relaxed text-base max-w-4xl`}>
+              {displayedBio.split('\n').map((paragraph: string, index: number) => (
+                <p key={index} className="mb-4 last:mb-0">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
-      <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>What I Do!</h3>
+      <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>{t('about.whatIDo')}</h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl">
         {whatIDoItems.map((item) => {
@@ -106,6 +114,8 @@ export default function About({ theme }: AboutProps) {
           const skillCardClass = theme === 'dark' 
             ? 'bg-slate-700 hover:bg-slate-600' 
             : `${item.backgroundColor} hover:shadow-md`;
+          const localizedTitle = getBilingualText(item, 'title', currentLang);
+          const localizedDescription = getBilingualText(item, 'description', currentLang);
 
           return (
             <div
@@ -120,12 +130,12 @@ export default function About({ theme }: AboutProps) {
               <h4 className={`font-semibold mb-2 text-base ${
                 theme === 'dark' ? 'text-white' : 'text-gray-800'
               }`}>
-                {item.title}
+                {localizedTitle}
               </h4>
               <p className={`text-sm leading-relaxed ${
                 theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
               }`}>
-                {item.description}
+                {localizedDescription}
               </p>
             </div>
           );

@@ -1,11 +1,12 @@
-import { Send, Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin, Send } from 'lucide-react';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import ScrollDownHint from './ScrollDownHint';
-import { useForm, ValidationError } from '@formspree/react';
 import { useFirebaseData } from '../context/FirebaseDataContext';
 import { useAnalytics, usePageTracking } from '../hooks/useAnalytics';
-import { addContactMessage } from '../utils/firestore';
+import { getBilingualText } from '../utils/bilingual';
 import type { Theme } from '../types';
+import { useForm } from '@formspree/react';
 
 interface ContactProps {
   theme: Theme;
@@ -16,6 +17,28 @@ export default function Contact({ theme }: ContactProps) {
   const [state, handleSubmit] = useForm("xgvldqev");
   const { trackContactFormSubmit } = useAnalytics();
   const sectionRef = useRef<HTMLElement>(null);
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
+  
+  // Get error message for a specific field
+  const getErrorMessage = (field: string): string | null => {
+    if (!state.errors || !('errors' in state.errors) || !Array.isArray(state.errors.errors)) {
+      return null;
+    }
+    
+    // Find the first error for this field
+    const error = state.errors.errors.find((err: any) => 
+      (err.field === field) || 
+      (typeof err.code === 'string' && err.code.includes(field))
+    );
+    
+    return error?.message || null;
+  };
+  
+  // Check if there are any errors
+  const hasErrors = state.errors && 'errors' in state.errors && 
+                   Array.isArray(state.errors.errors) && 
+                   state.errors.errors.length > 0;
   
   usePageTracking('Contact');
 
@@ -36,7 +59,7 @@ export default function Contact({ theme }: ContactProps) {
     <section ref={sectionRef} className={`${cardClass} relative rounded-2xl p-8 shadow-lg transition-all duration-500 h-full overflow-y-auto`}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
         <h2 className={`text-3xl font-bold ${textClass}`}>
-          Contact
+          {t('contact.title')}
         </h2>
         <div className="h-1 bg-blue-600 rounded-full w-full sm:flex-grow"></div>
       </div>
@@ -45,10 +68,10 @@ export default function Contact({ theme }: ContactProps) {
         {/* Contact Info */}
         <div>
           <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>
-            {profile?.contactTitle || 'Get In Touch'}
+            {getBilingualText(profile, 'contactTitle', currentLang) || t('contact.title')}
           </h3>
           <p className={`${bodyTextClass} leading-relaxed mb-6 whitespace-pre-wrap`}>
-            {profile?.contactMessage || "I'm always interested in new opportunities and exciting projects. Whether you want to hire me, collaborate, or just say hello, feel free to reach out!"}
+            {getBilingualText(profile, 'contactMessage', currentLang) || t('contact.subtitle')}
           </p>
           
           <div className="space-y-4">
@@ -59,7 +82,7 @@ export default function Contact({ theme }: ContactProps) {
                 <Phone size={18} />
               </div>
               <div>
-                <div className={`text-sm ${mutedTextClass}`}>Phone</div>
+                <div className={`text-sm ${mutedTextClass}`}>{t('sidebar.phone')}</div>
                 <div className={`font-medium ${textClass}`}>{profile?.phone || '+62 85219550092'}</div>
               </div>
             </div>
@@ -71,7 +94,7 @@ export default function Contact({ theme }: ContactProps) {
                 <Mail size={18} />
               </div>
               <div>
-                <div className={`text-sm ${mutedTextClass}`}>Email</div>
+                <div className={`text-sm ${mutedTextClass}`}>{t('sidebar.email')}</div>
                 <div className={`font-medium ${textClass}`}>{profile?.email || 'Akbarflh013@gmail.com'}</div>
               </div>
             </div>
@@ -83,7 +106,7 @@ export default function Contact({ theme }: ContactProps) {
                 <MapPin size={18} />
               </div>
               <div>
-                <div className={`text-sm ${mutedTextClass}`}>Location</div>
+                <div className={`text-sm ${mutedTextClass}`}>{t('sidebar.location')}</div>
                 <div className={`font-medium ${textClass}`}>{profile?.location || 'Bandung, Indonesia'}</div>
               </div>
             </div>
@@ -92,7 +115,7 @@ export default function Contact({ theme }: ContactProps) {
 
         {/* Contact Form */}
         <div>
-          <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>Send Message</h3>
+          <h3 className={`text-xl font-semibold ${subtitleClass} mb-6`}>{t('contact.send')}</h3>
           {state.succeeded ? (
             <div className={`p-6 rounded-lg border-2 border-green-500 ${theme === 'dark' ? 'bg-green-900/20 text-green-400' : 'bg-green-50 text-green-700'}`}>
               <div className="flex items-center gap-3">
@@ -100,31 +123,14 @@ export default function Contact({ theme }: ContactProps) {
                   <Send size={16} className="text-white" />
                 </div>
                 <div>
-                  <h4 className="font-semibold">Message Sent Successfully!</h4>
-                  <p className="text-sm opacity-80">Thank you for reaching out. I'll get back to you soon.</p>
+                  <h4 className="font-semibold">{t('contact.success')}</h4>
+                  <p className="text-sm opacity-80">{t('contact.getInTouch')}</p>
                 </div>
               </div>
             </div>
           ) : (
             <form onSubmit={async (e) => {
               e.preventDefault();
-              
-              // Get form data
-              const formData = new FormData(e.currentTarget);
-              const contactData = {
-                name: formData.get('name') as string,
-                email: formData.get('email') as string,
-                subject: formData.get('subject') as string,
-                message: formData.get('message') as string
-              };
-              
-              try {
-                // Save to Firestore
-                await addContactMessage(contactData);
-                console.log('Message saved to Firestore');
-              } catch (error) {
-                console.error('Error saving to Firestore:', error);
-              }
               
               // Submit to Formspree
               handleSubmit(e);
@@ -135,62 +141,57 @@ export default function Contact({ theme }: ContactProps) {
                   <input
                     type="text"
                     name="name"
-                    placeholder="Your Name"
+                    placeholder={t('contact.name')}
                     className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
-                    required
                   />
-                  <ValidationError 
-                    prefix="Name" 
-                    field="name"
-                    errors={state.errors}
-                    className="text-red-500 text-sm mt-1"
-                  />
+                  {hasErrors && (
+                    <div className="text-red-500 text-sm mt-1">
+                      {getErrorMessage('name')}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <input
                     type="email"
                     name="email"
-                    placeholder="Your Email"
+                    placeholder={t('contact.email')}
                     className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
                     required
                   />
-                  <ValidationError 
-                    prefix="Email" 
-                    field="email"
-                    errors={state.errors}
-                    className="text-red-500 text-sm mt-1"
-                  />
+                  {hasErrors && (
+                    <div className="text-red-500 text-sm mt-1">
+                      {getErrorMessage('email')}
+                    </div>
+                  )}
                 </div>
               </div>
               <div>
                 <input
                   type="text"
                   name="subject"
-                  placeholder="Subject"
+                  placeholder={t('contact.subject')}
                   className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 ${inputClass}`}
                   required
                 />
-                <ValidationError 
-                  prefix="Subject" 
-                  field="subject"
-                  errors={state.errors}
-                  className="text-red-500 text-sm mt-1"
-                />
+                {hasErrors && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {getErrorMessage('subject')}
+                  </div>
+                )}
               </div>
               <div>
                 <textarea
                   name="message"
-                  placeholder="Your Message"
+                  placeholder={t('contact.message')}
                   rows={5}
                   className={`w-full px-4 py-3 border rounded-lg outline-none transition-all duration-200 resize-none ${inputClass}`}
                   required
                 ></textarea>
-                <ValidationError 
-                  prefix="Message" 
-                  field="message"
-                  errors={state.errors}
-                  className="text-red-500 text-sm mt-1"
-                />
+                {hasErrors && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {getErrorMessage('message')}
+                  </div>
+                )}
               </div>
               <button
                 type="submit"
@@ -202,7 +203,7 @@ export default function Contact({ theme }: ContactProps) {
                 }`}
               >
                 <Send size={16} />
-                {state.submitting ? 'Sending...' : 'Send Message'}
+                {state.submitting ? t('contact.sending') : t('contact.send')}
               </button>
             </form>
           )}

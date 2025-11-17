@@ -3,6 +3,7 @@ import { FiSave, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiCamera, FiUplo
 import { motion } from 'framer-motion';
 import { useFirebaseData } from '../../context/FirebaseDataContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import type { Profile, SocialMediaField } from '../types';
 import IconPicker, { socialMediaIcons, type IconOption } from '../components/IconPicker';
 import SuccessModal from '../components/SuccessModal';
@@ -11,6 +12,7 @@ import { ImageCropper } from '../components/ImageCropper';
 export default function ProfilePage() {
   const { profile, updateProfile, refreshData } = useFirebaseData();
   const { isLightMode } = useAdminTheme();
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Profile | null>(profile);
   const [isSaving, setIsSaving] = useState(false);
@@ -150,10 +152,10 @@ export default function ProfilePage() {
       await refreshData();
       setPreviewImage(null);
       setIsEditing(false);
-      showSuccessModal('Profile Updated!', 'Your profile has been updated successfully.');
+      showSuccessModal(t('profileUpdatedTitle'), t('profileUpdatedDesc'));
     } catch (error) {
       console.error('Error updating profile:', error);
-      showSuccessModal('Error', 'Failed to update profile. Please try again.', 'warning');
+      showSuccessModal(t('errorTitle'), t('profileUpdateFailed'), 'warning');
     } finally {
       setIsSaving(false);
     }

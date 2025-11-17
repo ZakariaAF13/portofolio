@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useFirebaseAuth } from '../../context/FirebaseAuthContext';
 import { useAdminTheme } from '../context/AdminThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { activityHelpers } from '../../utils/activityLogger';
 import { Menu, Transition } from '@headlessui/react';
 import {
@@ -35,7 +36,8 @@ function classNames(...classes: string[]) {
 
 export default function AdminLayout() {
   const { user, signOut } = useFirebaseAuth();
-  const { isLightMode, toggleToLightMode, toggleToDarkMode, toggleTheme } = useAdminTheme();
+  const { isLightMode, toggleTheme } = useAdminTheme();
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -71,23 +73,36 @@ export default function AdminLayout() {
             </div>
             <div className="h-0 flex-1 overflow-y-auto pt-5 pb-4">
               <div className="flex flex-shrink-0 items-center justify-between px-4">
-                <h1 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Admin Panel</h1>
-                {/* Mobile: Single toggle button */}
-                <button
-                  onClick={toggleTheme}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isLightMode 
-                      ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-100' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                  }`}
-                  title={isLightMode ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-                >
-                  {isLightMode ? (
-                    <MoonIcon className="h-5 w-5" />
-                  ) : (
-                    <SunIcon className="h-5 w-5" />
-                  )}
-                </button>
+                <h1 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('admin.adminPanel')}</h1>
+                {/* Mobile: Theme toggle and Language toggle */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={toggleTheme}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                      isLightMode 
+                        ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-100' 
+                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                    }`}
+                    title={isLightMode ? t('theme.darkMode') : t('theme.lightMode')}
+                  >
+                    {isLightMode ? (
+                      <MoonIcon className="h-5 w-5" />
+                    ) : (
+                      <SunIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                      isLightMode
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                    title={language === 'id' ? 'English' : 'Bahasa Indonesia'}
+                  >
+                    {language === 'id' ? 'ID' : 'EN'}
+                  </button>
+                </div>
               </div>
               <nav className="mt-5 space-y-1 px-2">
                 {navigation.map((item) => {
@@ -109,7 +124,13 @@ export default function AdminLayout() {
                       onClick={() => setSidebarOpen(false)}
                     >
                       <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                      {item.name}
+                      {item.href.endsWith('/dashboard') ? t('admin.dashboard')
+                        : item.href.endsWith('/projects') ? t('admin.projects')
+                        : item.href.endsWith('/skills') ? t('admin.skills')
+                        : item.href.endsWith('/about') ? t('admin.about')
+                        : item.href.endsWith('/profile') ? t('admin.profile')
+                        : item.href.endsWith('/contact') ? t('admin.contact')
+                        : t('admin.activity')}
                     </Link>
                   );
                 })}
@@ -134,7 +155,7 @@ export default function AdminLayout() {
                         : 'text-blue-300 bg-blue-900/30 hover:bg-blue-900/50'
                     }`}
                   >
-                    Manage account
+                    {t('admin.manageAccount')}
                   </button>
                   <button
                     onClick={handleSignOut}
@@ -144,7 +165,7 @@ export default function AdminLayout() {
                         : 'text-gray-300 bg-gray-700 hover:bg-gray-600'
                     }`}
                   >
-                    Sign out
+                    {t('admin.signOut')}
                   </button>
                 </div>
               </div>
@@ -158,34 +179,34 @@ export default function AdminLayout() {
         <div className={`flex flex-1 flex-col min-h-0 ${isLightMode ? 'bg-white' : 'bg-gray-800'}`}>
           <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
             <div className="flex flex-shrink-0 items-center justify-between px-4">
-              <h1 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Admin Panel</h1>
-              {/* Desktop: Both moon and sun buttons */}
-              <div className="flex space-x-1">
+              <h1 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('admin.adminPanel')}</h1>
+              {/* Desktop: Single theme toggle and language toggle */}
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={toggleToLightMode}
-                  className={`p-2 rounded-lg transition-colors ${
+                  onClick={toggleTheme}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                     isLightMode 
-                      ? 'bg-blue-500 text-white shadow-md' 
-                      : isLightMode 
-                        ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                      ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-100' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
                   }`}
-                  title="Switch to Light Mode"
+                  title={isLightMode ? t('theme.darkMode') : t('theme.lightMode')}
                 >
-                  <SunIcon className="h-4 w-4" />
+                  {isLightMode ? (
+                    <MoonIcon className="h-5 w-5" />
+                  ) : (
+                    <SunIcon className="h-5 w-5" />
+                  )}
                 </button>
                 <button
-                  onClick={toggleToDarkMode}
-                  className={`p-2 rounded-lg transition-colors ${
-                    !isLightMode 
-                      ? 'bg-blue-500 text-white shadow-md' 
-                      : isLightMode 
-                        ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                    isLightMode
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
-                  title="Switch to Dark Mode"
+                  title={language === 'id' ? 'English' : 'Bahasa Indonesia'}
                 >
-                  <MoonIcon className="h-4 w-4" />
+                  {language === 'id' ? 'ID' : 'EN'}
                 </button>
               </div>
             </div>
@@ -208,7 +229,13 @@ export default function AdminLayout() {
                     )}
                   >
                     <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                    {item.name}
+                    {item.href.endsWith('/dashboard') ? t('admin.dashboard')
+                      : item.href.endsWith('/projects') ? t('admin.projects')
+                      : item.href.endsWith('/skills') ? t('admin.skills')
+                      : item.href.endsWith('/about') ? t('admin.about')
+                      : item.href.endsWith('/profile') ? t('admin.profile')
+                      : item.href.endsWith('/contact') ? t('admin.contact')
+                      : t('admin.activity')}
                   </Link>
                 );
               })}
@@ -223,7 +250,7 @@ export default function AdminLayout() {
                   <UserCircleIcon className={`h-9 w-9 ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`} />
                   <div className="ml-3 text-left">
                     <p className={`text-sm font-medium ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{user?.email}</p>
-                    <p className={`text-xs font-medium ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>View profile</p>
+                    <p className={`text-xs font-medium ${isLightMode ? 'text-gray-600' : 'text-gray-300'}`}>{t('admin.viewProfile')}</p>
                   </div>
                 </div>
               </Menu.Button>
@@ -254,7 +281,7 @@ export default function AdminLayout() {
                           }`
                         )}
                       >
-                        Manage account
+                        {t('admin.manageAccount')}
                       </button>
                     )}
                   </Menu.Item>
@@ -271,7 +298,7 @@ export default function AdminLayout() {
                           }`
                         )}
                       >
-                        Sign out
+                        {t('admin.signOut')}
                       </button>
                     )}
                   </Menu.Item>
@@ -302,7 +329,7 @@ export default function AdminLayout() {
             >
               <Bars3Icon className="h-6 w-6" />
             </button>
-            <h1 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>Admin Panel</h1>
+            <h1 className={`text-lg font-semibold ${isLightMode ? 'text-gray-900' : 'text-white'}`}>{t('admin.adminPanel')}</h1>
             <div className="w-6" /> {/* Spacer for centering */}
           </div>
         </div>

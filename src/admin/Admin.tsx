@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '../context/ThemeContext';
 import { AdminThemeProvider } from './context/AdminThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import DashboardPage from './pages/DashboardPage';
@@ -17,7 +18,8 @@ export default function Admin() {
   return (
     <ThemeProvider>
       <AdminThemeProvider>
-        <Routes>
+        <LanguageProvider>
+          <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
             path="/"
@@ -40,6 +42,7 @@ export default function Admin() {
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
         </Routes>
+        </LanguageProvider>
       </AdminThemeProvider>
     </ThemeProvider>
   );
